@@ -1,14 +1,10 @@
+HSX Backend License
 
-**CONTRIBUTE.md**:
+All files in this backend folder are **protected**. You may:
+- Modify these files locally for personal use or development.
 
-```markdown
-# Contributing to HSX Backend
+You may **NOT**:
+- Redistribute these files in any form.
+- Use them commercially without permission.
 
-Thank you for your interest in contributing! Here’s how you can help:
-
-- You may **modify these files locally** to add features or support for more `.hsx` code languages.
-- **Do not redistribute** any files from this repository.
-- Submit pull requests with clear descriptions of your changes.
-- Ensure code is clean, well-commented, and follows Node.js best practices.
-
-We appreciate your contributions!
+© 2025 HSX Project
