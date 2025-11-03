@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MistMax Test</title>
+</head>
+<body>
+    <h1>MistMax.js Extension Test</h1>
+
+    <div id="app"></div>
+
+    <!-- Include MistMax.js -->
+    <script type="module">
+        import Mist from './MistDB_Frontend.js';
+
+        // Initialize frontend database
+        const db = new Mist.DB();
+
+        // Add test users
+        db.addUser('alice', 'console.log("Hello from Alice!");');
+        db.addUser('bob', 'console.log("Hello from Bob!");');
+
+        // Update Alice's code
+        db.updateUserCode('alice', 'console.log("Alice updated her code!");');
+
+        // Log user codes
+        console.log('Alice Code:', db.getUserCode('alice'));
+        console.log('Bob Code:', db.getUserCode('bob'));
+
+        // List all users
+        console.log('All Users:', db.listUsers());
+
+        // Add a code version for Alice
+        db.addVersion('alice', 'console.log("Alice version 2");');
+        console.log('Alice Versions:', db.getVersions('alice'));
+
+        // Use MistSyntax helpers
+        const htmlBlock = Mist.Syntax.wrapHTML('<p>Hello MistMax!</p>');
+        const jsBlock = Mist.Syntax.wrapJS('console.log("Running JS via MistSyntax");');
+
+        // Inject into page
+        document.getElementById('app').innerHTML = htmlBlock + jsBlock;
+
+        // Preload and show an image
+        const img = Mist.Syntax.includeMedia('https://via.placeholder.com/150', 'img', 'Placeholder');
+        document.getElementById('app').innerHTML += img;
+
+        // Test Media helpers
+        const canvas = Mist.Media.createCanvas(200, 100);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(10, 10, 180, 80);
+        document.getElementById('app').appendChild(canvas);
+
+        // Run Python code once Pyodide loads
+        const waitForPyodide = setInterval(async () => {
+            if (window.pyodide) {
+                clearInterval(waitForPyodide);
+                const result = await Mist.Syntax.runPython('1 + 2 + 3');
+                console.log('Python result:', result);
+            }
+        }, 500);
+    </script>
+</body>
+</html>

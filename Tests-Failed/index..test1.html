@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HSX Runtime Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .component { padding: 1rem; margin: 1rem 0; border: 1px solid #ccc; border-radius: 8px; background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <h1>HSX Runtime Demo</h1>
+
+  <div id="app"></div>
+
+  <!-- Load HSX runtime -->
+  <script type="module">
+    import { loadHSX } from './test-extensions.test.js'; // Make sure this file is in the same folder
+    loadHSX('./Mist.hsx'); // Make sure Mist.test.hsx is in the same folder
+  </script>
+</body>
+</html>
