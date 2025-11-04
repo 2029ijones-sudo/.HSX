@@ -1,4 +1,4 @@
-// hsx-runtime.js
+// hsx-runtime.js - Combined Full Frontend HSX Runtime for Mist.hsx
 
 // ------------------- Reactive Variable System -------------------
 class ReactiveVar {
@@ -9,7 +9,6 @@ class ReactiveVar {
     set(val) {
         this.value = val;
         this.subscribers.forEach(fn => fn(val));
-        this.value = val;
     }
     get() { return this.value; }
     subscribe(fn) { this.subscribers.push(fn); }
@@ -26,7 +25,7 @@ class HSXComponent {
         if (!target) return console.warn("Render target not found:", selector);
         target.innerHTML = this.content;
 
-        // Bind reactive variables
+        // Bind reactive variables inside component
         runtime.bindReactivity(target);
     }
 }
@@ -38,7 +37,7 @@ export class HSXRuntime {
         this.components = {};   // name -> HSXComponent
     }
 
-    // Set variable
+    // ---------------- Variable Management ----------------
     setVariable(name, value, reactive = false) {
         if (reactive) this.variables[name] = new ReactiveVar(value);
         else this.variables[name] = value;
@@ -49,7 +48,7 @@ export class HSXRuntime {
         return val instanceof ReactiveVar ? val.get() : val;
     }
 
-    // Component management
+    // ---------------- Component Management ----------------
     defineComponent(name, content) {
         this.components[name] = new HSXComponent(name, content);
     }
@@ -60,7 +59,6 @@ export class HSXRuntime {
         comp.render(selector, this);
     }
 
-    // Bind reactive variables inside DOM element
     bindReactivity(el) {
         const reactiveVars = Object.entries(this.variables).filter(([_, v]) => v instanceof ReactiveVar);
         reactiveVars.forEach(([name, rv]) => {
@@ -69,15 +67,16 @@ export class HSXRuntime {
         });
     }
 
-    // Load media elements
+    // ---------------- Media Management ----------------
     loadMedia(type, url, selector) {
         const el = document.createElement(type);
         el.src = url;
+        if(type === "video" || type === "audio") el.controls = true;
         const target = document.querySelector(selector) || document.body;
         target.appendChild(el);
     }
 
-    // Execute single HSX command
+    // ---------------- Command Execution ----------------
     async execute(cmd) {
         try {
             switch(cmd.type) {
@@ -110,68 +109,82 @@ export class HSXRuntime {
     }
 }
 
-// ------------------- Load HSX file -------------------
+// ------------------- HSX Loader -------------------
 export async function loadHSX(url) {
     const res = await fetch(url);
     const text = await res.text();
 
-    // Extract <hsx>...</hsx> content
+    // Extract <hsx>...</hsx>
     const inner = text.match(/<hsx[^>]*>([\s\S]*)<\/hsx>/i)?.[1];
-    if (!inner) throw new Error("Invalid HSX file");
+    if(!inner) throw new Error("Invalid HSX file");
 
     const temp = document.createElement("div");
     temp.innerHTML = inner;
 
     const runtime = new HSXRuntime();
 
-    // 1️⃣ Load standard <script> modules
-    for (const s of temp.querySelectorAll("script")) {
+    // ---------------- 1️⃣ Load standard <script> modules ----------------
+    temp.querySelectorAll("script").forEach(s => {
         const newScript = document.createElement("script");
-        if (s.src) newScript.src = s.src;
-        if (s.type) newScript.type = s.type;
+        if(s.src) newScript.src = s.src;
+        if(s.type) newScript.type = s.type;
         newScript.textContent = s.textContent;
         document.body.appendChild(newScript);
-    }
+    });
 
-    // 2️⃣ Parse HSX lines
+    // ---------------- 2️⃣ Parse HSX custom statements ----------------
     const hsxLines = inner.split(/\r?\n/).map(l => l.trim());
-    for (const line of hsxLines) {
-        if (!line.startsWith("hsx ")) continue;
-        let cmd;
-
+    for(const line of hsxLines) {
+        if(!line.startsWith("hsx ")) continue;
         try {
-            if (line.includes("run async"))
-                cmd = { type: "run-async", code: line.split("run async")[1].trim() };
-            else if (line.includes("define component")) {
+            if(line.includes("exist import correct file")) {
+                const file = line.split("exist import correct file")[1].trim();
+                const script = document.createElement("script");
+                script.type = "module";
+                script.src = file;
+                document.body.appendChild(script);
+                console.log(`📦 HSX: imported file module ${file}`);
+            } else if(line.includes("exist import simple file")) {
+                const file = line.split("exist import simple file")[1].trim();
+                const script = document.createElement("script");
+                script.src = file;
+                document.body.appendChild(script);
+                console.log(`📦 HSX: imported simple file ${file}`);
+            } else if(line.includes("file import all to")) {
+                const dest = line.split("file import all to")[1].trim();
+                console.log(`📦 HSX: bundling all files to ${dest}`);
+            } else if(line.includes("file import/make/rename")) {
+                const info = line.split("file import/make/rename")[1].trim();
+                console.log(`📦 HSX: rename/move ${info}`);
+            } else if(line.includes("media load")) {
+                const [_, type, url, selector] = line.match(/media load (\w+) from (.+) to (.+)/);
+                await runtime.execute({type:"media-load", mediaType:type, url, selector});
+            } else if(line.includes("run async")) {
+                const code = line.split("run async")[1].trim();
+                await runtime.execute({type:"run-async", code});
+            } else if(line.includes("define component")) {
                 const [_, name, content] = line.match(/define component (\w+) (.+)/);
-                cmd = { type: "define-component", name, content };
-            }
-            else if (line.includes("render component")) {
+                await runtime.execute({type:"define-component", name, content});
+            } else if(line.includes("render component")) {
                 const [_, name, selector] = line.match(/render component (\w+) to (.+)/);
-                cmd = { type: "render-component", name, selector };
-            }
-            else if (line.includes("set variable")) {
-                let reactive = line.startsWith("hsx reactive variable");
+                await runtime.execute({type:"render-component", name, selector});
+            } else if(line.includes("set variable")) {
+                const reactive = line.startsWith("hsx reactive variable");
                 const [_, name, value] = line.match(/variable (\w+) = (.+)/);
-                cmd = { type: "set-variable", name, value, reactive };
+                await runtime.execute({type:"set-variable", name, value, reactive});
             }
-            else if (line.includes("media load")) {
-                const [_, mediaType, url, selector] = line.match(/media load (\w+) from (.+) to (.+)/);
-                cmd = { type: "media-load", mediaType, url, selector };
-            }
-
-            if (cmd) await runtime.execute(cmd);
         } catch(e) {
             console.warn("⚠️ Failed to parse HSX line:", line, e);
         }
     }
 
-    // 3️⃣ Load any media elements in HTML
+    // ---------------- 3️⃣ Render media and DOM elements ----------------
     temp.querySelectorAll("img,video,canvas,div").forEach(el => document.body.appendChild(el.cloneNode(true)));
 
     console.log("✅ HSX runtime fully loaded:", url);
+    return runtime;
 }
 
 // ------------------- Auto-load if linked via <script data-src="..."> -------------------
 const current = document.currentScript?.dataset?.src;
-if (current) loadHSX(current);
+if(current) loadHSX(current);
