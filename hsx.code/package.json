@@ -1,0 +1,52 @@
+{
+  "name": "hsx-code",
+  "version": "0.1.0",
+  "description": "HSX Code - Next-gen code editor for .hsx and .ks languages with full extension support",
+  "main": "app/main.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "node scripts/build.js",
+    "package-extensions": "node scripts/packageExtensions.js",
+    "start": "electron ."
+  },
+  "keywords": [
+    "hsx",
+    "editor",
+    "monaco",
+    "electron",
+    "extensions"
+  ],
+  "author": "William Isaiah Jones",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "monaco-editor": "^0.43.0",
+    "tailwindcss": "^3.4.0"
+  },
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.5.0",
+    "archiver": "^5.3.1"
+  },
+  "build": {
+    "appId": "com.william.hsxcode",
+    "productName": "HSX Code",
+    "win": {
+      "icon": "assets/icons/livo.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "files": [
+      "app/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ]
+  }
+}
+
