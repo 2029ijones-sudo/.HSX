@@ -15,41 +15,83 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up filename
-        id: filename
+      - name: Set up filenames
+        id: filenames
         run: |
-          # Create a unique filename based on timestamp
-          OUTPUT_FILE="hsx_files/idea_$(date +%Y%m%d%H%M%S).hsx"
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          HSX_FILE="hsx_files/idea_$TIMESTAMP.hsx"
+          INDEX_FILE="hsx_files/index_$TIMESTAMP.html"
           mkdir -p hsx_files
-          echo "OUTPUT_FILE=$OUTPUT_FILE" >> $GITHUB_ENV
-          echo "✅ Will create HSX file: $OUTPUT_FILE"
+          echo "HSX_FILE=$HSX_FILE" >> $GITHUB_ENV
+          echo "INDEX_FILE=$INDEX_FILE" >> $GITHUB_ENV
+          echo "✅ Will generate HSX file: $HSX_FILE"
+          echo "✅ Will generate index.html: $INDEX_FILE"
 
-      - name: Read HSX runtime template and generate file
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Generate real HSX file using runtime
         run: |
           IDEA="${{ github.event.inputs.idea }}"
+          HSX_FILE="${{ env.HSX_FILE }}"
           RUNTIME_PATH="frontend/hsx-runtime.js"
 
-          if [ ! -f "$RUNTIME_PATH" ]; then
-            echo "❌ HSX runtime not found at $RUNTIME_PATH"
-            exit 1
-          fi
+          node << 'EOF'
+          import fs from 'fs';
+          import path from 'path';
+          import { HSXRuntime } from './${RUNTIME_PATH}';
 
-          # Create the HSX file by prepending runtime reference and user idea
-          {
-            echo "// HSX Runtime reference"
-            cat "$RUNTIME_PATH"
-            echo ""
-            echo "// === User Idea ==="
-            echo "(hsx) create new block cal it \"UserIdea\""
-            echo "{"
-            echo "  idea: \"$IDEA\""
-            echo "}"
-          } > "$OUTPUT_FILE"
+          const idea = process.env.IDEA;
+          const hsxFile = process.env.HSX_FILE;
 
-          echo "✅ HSX file generated: $OUTPUT_FILE"
+          const hsx = new HSXRuntime();
 
-      - name: Upload HSX file as artifact
+          // Implement a helper in HSXRuntime: generateFromIdea(idea)
+          // that returns a string of HSX code for the idea
+          if (typeof hsx.generateFromIdea !== 'function') {
+            console.error('❌ HSXRuntime.generateFromIdea not implemented');
+            process.exit(1);
+          }
+
+          const generatedHSX = hsx.generateFromIdea(idea);
+
+          // Save the generated HSX code
+          fs.writeFileSync(hsxFile, generatedHSX, 'utf8');
+          console.log('✅ Generated HSX file:', hsxFile);
+EOF
+
+      - name: Generate simple index.html embedding the HSX file
+        run: |
+          HSX_FILE_PATH=$(basename "${{ env.HSX_FILE }}")
+          INDEX_FILE="${{ env.INDEX_FILE }}"
+          RUNTIME_PATH="frontend/hsx-runtime.js"
+          mkdir -p $(dirname "$INDEX_FILE")
+          cat << EOF > "$INDEX_FILE"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HSX Idea Preview</title>
+  <script type="module" src="../$RUNTIME_PATH"></script>
+</head>
+<body>
+  <script type="module">
+    import { HSXRuntime } from '../$RUNTIME_PATH';
+    const hsx = new HSXRuntime();
+    hsx.loadFromFile('$HSX_FILE_PATH');
+  </script>
+</body>
+</html>
+EOF
+          echo "✅ index.html generated: $INDEX_FILE"
+
+      - name: Upload HSX file and index.html as artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: hsx-file
-          path: ${{ env.OUTPUT_FILE }}
+          name: hsx-idea-files
+          path: |
+            ${{ env.HSX_FILE }}
+            ${{ env.INDEX_FILE }}
