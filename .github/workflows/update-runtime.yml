@@ -58,10 +58,27 @@ jobs:
           - Automated runtime packaging
           EOF
 
-      - name: Commit runtime snapshot
+      - name: Commit runtime snapshot with dynamic message
         run: |
           git config user.name "hsx-bot"
           git config user.email "hsx-bot@users.noreply.github.com"
-          git add runtime
-          git commit -m "Auto-update HSX runtime snapshot"
-          git push
+          
+          # Stage changes
+          git add runtime frontend/hsx-runtime.js backend/hsx-compiler.js
+          
+          # Generate a dynamic commit message
+          MSG="Auto-update HSX runtime snapshot:\n"
+          if git diff --cached --name-only | grep -q "frontend/hsx-runtime.js"; then
+            MSG="$MSG- Updated frontend runtime (hsx-runtime.js)\n"
+          fi
+          if git diff --cached --name-only | grep -q "backend/hsx-compiler.js"; then
+            MSG="$MSG- Updated backend compiler (hsx-compiler.js)\n"
+          fi
+          
+          # Commit only if there are changes
+          if ! git diff --cached --quiet; then
+            git commit -m "$MSG"
+            git push
+          else
+            echo "No changes to commit."
+          fi
