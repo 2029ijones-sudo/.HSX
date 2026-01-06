@@ -38,26 +38,25 @@ jobs:
           HSX_FILE="${{ env.HSX_FILE }}"
           RUNTIME_PATH="frontend/hsx-runtime.js"
 
-          # Write a temporary Node.js script
-          cat << 'JS' > generateHSX.js
-          import fs from 'fs';
-          import path from 'path';
-          import { HSXRuntime } from './' + process.env.RUNTIME_PATH;
+          # Write Node.js script (no indentation on heredoc)
+          cat <<'JS' > generateHSX.js
+import fs from 'fs';
+import { HSXRuntime } from './frontend/hsx-runtime.js';
 
-          const idea = process.env.IDEA;
-          const hsxFile = process.env.HSX_FILE;
+const idea = process.env.IDEA;
+const hsxFile = process.env.HSX_FILE;
 
-          const hsx = new HSXRuntime();
+const hsx = new HSXRuntime();
 
-          if (typeof hsx.generateFromIdea !== 'function') {
-            console.error('❌ HSXRuntime.generateFromIdea not implemented');
-            process.exit(1);
-          }
+if (typeof hsx.generateFromIdea !== 'function') {
+  console.error('❌ HSXRuntime.generateFromIdea not implemented');
+  process.exit(1);
+}
 
-          const generatedHSX = hsx.generateFromIdea(idea);
+const generatedHSX = hsx.generateFromIdea(idea);
 
-          fs.writeFileSync(hsxFile, generatedHSX, 'utf8');
-          console.log('✅ Generated HSX file:', hsxFile);
+fs.writeFileSync(hsxFile, generatedHSX, 'utf8');
+console.log('✅ Generated HSX file:', hsxFile);
 JS
 
           # Run the script
