@@ -36,9 +36,8 @@ jobs:
         run: |
           IDEA="${{ github.event.inputs.idea }}"
           HSX_FILE="${{ env.HSX_FILE }}"
-          RUNTIME_PATH="frontend/hsx-runtime.js"
 
-          # Write Node.js script (no indentation on heredoc)
+          # Write Node.js script (no indentation inside heredoc)
           cat <<'JS' > generateHSX.js
 import fs from 'fs';
 import { HSXRuntime } from './frontend/hsx-runtime.js';
