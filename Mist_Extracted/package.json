@@ -3,7 +3,7 @@
   "displayName": "HSX",
   "description": "Custom file extension for Node.js + Pyodide scripts with bundled dependencies",
   "version": "1.0.1",
-  "publisher": "William Isaiah Jones",
+  "publisher": "WilliamIsaiahJones",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -42,6 +42,7 @@
   },
   "main": "extension.js",
   "scripts": {
+    "build": "echo 'No build step required for HSX extension'",
     "test": "node ./test/runTest.js"
   },
   "files": [
