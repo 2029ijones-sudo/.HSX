@@ -1,4 +1,4 @@
-// hsx-runtime.js — HSX v0.68+ Core (Full Interpreter + Modules + Fun + Attachments + Legacy Safety + Full Features)
+// hsx-runtime.js — HSX v0.69+ Core (Full Interpreter + Modules + Fun + Attachments + Legacy Safety + Full Features)
 // © 2026 William Isaiah Jones
 
 export class HSXRuntime {
@@ -290,3 +290,4 @@ if (location.search.includes("hsxFiles=")) {
   const hsx = new HSXRuntime();
   hsx.load(location.pathname);
 }
+
