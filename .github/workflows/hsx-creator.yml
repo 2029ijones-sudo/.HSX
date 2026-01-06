@@ -1,0 +1,55 @@
+name: HSX Idea Creator
+
+on:
+  workflow_dispatch:
+    inputs:
+      idea:
+        description: "Your idea for an HSX file"
+        required: true
+
+jobs:
+  create-hsx:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up filename
+        id: filename
+        run: |
+          # Create a unique filename based on timestamp
+          OUTPUT_FILE="hsx_files/idea_$(date +%Y%m%d%H%M%S).hsx"
+          mkdir -p hsx_files
+          echo "OUTPUT_FILE=$OUTPUT_FILE" >> $GITHUB_ENV
+          echo "✅ Will create HSX file: $OUTPUT_FILE"
+
+      - name: Read HSX runtime template and generate file
+        run: |
+          IDEA="${{ github.event.inputs.idea }}"
+          RUNTIME_PATH="frontend/hsx-runtime.js"
+
+          if [ ! -f "$RUNTIME_PATH" ]; then
+            echo "❌ HSX runtime not found at $RUNTIME_PATH"
+            exit 1
+          fi
+
+          # Create the HSX file by prepending runtime reference and user idea
+          {
+            echo "// HSX Runtime reference"
+            cat "$RUNTIME_PATH"
+            echo ""
+            echo "// === User Idea ==="
+            echo "(hsx) create new block cal it \"UserIdea\""
+            echo "{"
+            echo "  idea: \"$IDEA\""
+            echo "}"
+          } > "$OUTPUT_FILE"
+
+          echo "✅ HSX file generated: $OUTPUT_FILE"
+
+      - name: Upload HSX file as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: hsx-file
+          path: ${{ env.OUTPUT_FILE }}
