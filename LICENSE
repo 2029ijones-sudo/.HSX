@@ -1,22 +1,24 @@
 /*
 Copyright (c) 2025 William Isaiah Jones
-All rights reserved.
 
-This software, including all source code, assets, images, videos, scripts, libraries, and associated files
-("HSX Extension") is the exclusive property of William Isaiah Jones.
+This software, including all source code, assets, images, videos, scripts, libraries,
+and associated files ("HSX Extension"), is now open source under the MIT License.
 
-Usage Permissions:
-1. You may use and modify this software locally for personal purposes.
-2. You may create projects using HSX and distribute your own projects.
-   However, you may NOT distribute any of the HSX source code, compiler files, or other original files.
-3. You may NOT redistribute any .js files that are not your own, including compiler or build files, in any form.
-4. You may use the Mist.hsx file in the Mist_Extracted folder for reference and learning purposes only.
-5. There is a frontend version in a subfolder called 'frontend' that you may modify locally,
-   but it cannot be redistributed in any way.
-6. You may NOT copy or claim any part of the software as your own work.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Permission Requests:
-Any request to redistribute or use the software beyond the above permissions will automatically be denied.
+1. The above copyright notice and this permission notice shall be included in all copies
+   or substantial portions of the Software.
+2. The Software is provided "as is", without warranty of any kind, express or implied,
+   including but not limited to the warranties of merchantability, fitness for a particular
+   purpose, and noninfringement. In no event shall the authors or copyright holders
+   be liable for any claim, damages, or other liability, whether in an action of contract,
+   tort, or otherwise, arising from, out of, or in connection with the Software or the
+   use or other dealings in the Software.
 
 For questions, contact:
 Email: babyyodacutefry@hugg.store
