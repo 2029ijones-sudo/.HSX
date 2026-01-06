@@ -1,6 +1,5 @@
 name: Update HSX VS Code Extension
 
-# Run workflow only when these files change
 on:
   push:
     paths:
@@ -12,34 +11,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repo
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # 2. Set up Node.js (required for building VS Code extensions)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # 3. Navigate to Mist_Extracted folder and install dependencies
       - name: Install Dependencies
         run: npm install
         working-directory: ./Mist_Extracted
 
-      # 4. Build the extension
       - name: Build HSX Extension
         run: npm run build
         working-directory: ./Mist_Extracted
 
-      # 5. Package the extension (creates a .vsix file)
       - name: Package HSX Extension
         run: npx vsce package
         working-directory: ./Mist_Extracted
 
-      # 6. Publish the extension to VS Code Marketplace
       - name: Publish HSX Extension
-        uses: marketplace-actions/vscode-publish@v1
-        with:
-          vscode-token: ${{ secrets.VSCE_TOKEN }}
-          extension-id: WilliamIsaiahJones.HSX
+        run: npx vsce publish
+        working-directory: ./Mist_Extracted
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
