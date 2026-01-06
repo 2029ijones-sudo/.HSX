@@ -1,78 +1,292 @@
-// hsx-runtime.js
-export async function loadHSX(url) {
-  const res = await fetch(url);
-  const text = await res.text();
+// hsx-runtime.js — HSX v0.68+ Core (Full Interpreter + Modules + Fun + Attachments + Legacy Safety + Full Features)
+// © 2026 William Isaiah Jones
 
-  // Extract content inside <hsx> ... </hsx>
-  const inner = text.match(/<hsx[^>]*>([\s\S]*)<\/hsx>/i)?.[1];
-  if (!inner) throw new Error("Invalid HSX file");
+export class HSXRuntime {
+  constructor() {
+    this.components = {};
+    this.context = {};
+    this.blocks = {};      // User-created HSX blocks (funny, etc.)
+    this.data = {};        // User-defined data objects (funstone, etc.)
+    this.modules = {};
+    this.attachments = {};
+    this.metaTags = {};    // User-defined meta tags
+    this.emotions = {};    // Emotion triggers: key = symbol, value = function
+    this.pyodide = null;
+    this.sandboxed = true;
 
-  const temp = document.createElement("div");
-  temp.innerHTML = inner;
-
-  // -----------------------------
-  // 1️⃣ Handle standard <script> modules
-  // -----------------------------
-  const scripts = temp.querySelectorAll("script");
-  for (const s of scripts) {
-    const newScript = document.createElement("script");
-    if (s.src) newScript.src = s.src;
-    if (s.type) newScript.type = s.type;
-    newScript.textContent = s.textContent;
-    document.body.appendChild(newScript);
+    this.emotionActive = false;  // Flag when emotions are allowed
+    this.dataExportActive = false; // Flag for exporting block data
+    this.metaActive = false;     // Flag for meta usage
   }
 
-  // -----------------------------
-  // 2️⃣ Handle HSX custom statements
-  // Example: "hsx exist import correct file jsx/App.jsx"
-  // -----------------------------
-  const hsxLines = inner.split(/\r?\n/).map(line => line.trim());
-  for (const line of hsxLines) {
-    if (!line.startsWith("hsx ")) continue;
-
-    try {
-      if (line.includes("exist import correct file")) {
-        const file = line.split("exist import correct file")[1].trim();
-        const script = document.createElement("script");
-        script.type = "module";
-        script.src = file;
-        document.body.appendChild(script);
-        console.log(`📦 HSX: imported file module ${file}`);
-      } else if (line.includes("exist import simple file")) {
-        const file = line.split("exist import simple file")[1].trim();
-        const script = document.createElement("script");
-        script.src = file;
-        document.body.appendChild(script);
-        console.log(`📦 HSX: imported simple file ${file}`);
-      } else if (line.includes("exist import node module")) {
-        const mod = line.split("exist import node module")[1].trim();
-        // Only works if bundled via MistBundle.js
-        console.log(`📦 HSX: node module "${mod}" expected to be in bundle`);
-      } else if (line.includes("exist import node built-in module")) {
-        const mod = line.split("exist import node built-in module")[1].trim();
-        console.log(`📦 HSX: node built-in module "${mod}"`);
-      } else if (line.includes("file import all to")) {
-        const dest = line.split("file import all to")[1].trim();
-        console.log(`📦 HSX: bundling all files to ${dest}`);
-      } else if (line.includes("file import/make/rename")) {
-        const info = line.split("file import/make/rename")[1].trim();
-        console.log(`📦 HSX: rename/move ${info}`);
+  // === Python engine init ===
+  async initPyodide() {
+    if (!this.pyodide) {
+      console.log("🐍 Initializing Pyodide...");
+      try {
+        const { loadPyodide } = await import("./pyodide/pyodide.mjs");
+        this.pyodide = await loadPyodide({ indexURL: "./pyodide/" });
+      } catch (e) {
+        console.warn("⚠️ Pyodide not available; Python blocks will be skipped.");
       }
-    } catch (err) {
-      console.warn("⚠️ HSX runtime failed to parse line:", line, err);
     }
   }
 
-  // -----------------------------
-  // 3️⃣ Handle media elements
-  // -----------------------------
-  temp.querySelectorAll("img,video,canvas,div").forEach(el => {
-    document.body.appendChild(el.cloneNode(true));
-  });
+  // === Load HSX files ===
+  async loadFiles(filePaths) {
+    if (!Array.isArray(filePaths)) filePaths = [filePaths];
+    for (const path of filePaths) await this.load(path);
+  }
 
-  console.log("✅ HSX runtime fully loaded:", url);
+  async load(filePath) {
+    console.log(`🌀 Loading HSX file: ${filePath}`);
+    try {
+      const response = await fetch(filePath);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const code = await response.text();
+      await this.execute(code);
+    } catch (e) {
+      console.error(`❌ Failed to load HSX file: ${filePath}`, e);
+    }
+  }
+
+  // === Execute HSX code ===
+  async execute(code) {
+    const lines = code.split("\n").map(l => l.trimEnd());
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // === Media ===
+      if (line.startsWith("hsx attach image")) { this._attachMedia("img", this._extractQuotes(line)); continue; }
+      if (line.startsWith("hsx attach video")) { this._attachMedia("video", this._extractQuotes(line)); continue; }
+      if (line.startsWith("hsx attach audio")) { this._attachMedia("audio", this._extractQuotes(line)); continue; }
+
+      // === Components ===
+      if (line.startsWith("hsx define component")) {
+        const name = line.replace("hsx define component", "").trim();
+        let body = "";
+        i++;
+        while (i < lines.length && !lines[i].startsWith("hsx end")) { body += lines[i] + "\n"; i++; }
+        this.components[name] = body;
+        console.log(`🧩 Component defined: ${name}`);
+        continue;
+      }
+      if (line.startsWith("hsx render")) { this._renderComponent(line.replace("hsx render", "").trim()); continue; }
+
+      // === JS / Python / HSX blocks ===
+      if (line.startsWith("{js") || line.startsWith("{py") || line.startsWith("{hsx")) {
+        let block = "";
+        const type = line.slice(1, 3);
+        i++;
+        while (i < lines.length && !lines[i].match(/^}\s*$/)) { block += lines[i] + "\n"; i++; }
+        if (type === "js") await this._runJS(block, true);
+        else if (type === "py") await this._runPy(block);
+        else if (type === "hsx") await this._runHSXBlock(block);
+        continue;
+      }
+
+      // === Security mode ===
+      if (line.startsWith("hsx security")) {
+        this.sandboxed = line.replace("hsx security", "").trim() !== "off";
+        console.log(`🔒 HSX security mode: ${this.sandboxed ? "ON" : "OFF"}`);
+        continue;
+      }
+
+      // === Module commands ===
+      if (line.startsWith("hsx modules:")) { await this._handleModules(line.replace("hsx modules:", "").trim()); continue; }
+
+      // === New HSX / Meta / Fun / Emotions ===
+      if (line.startsWith("hsx:") || line.startsWith("(hsx)")) { await this._handleNewHSXCommands(line); continue; }
+      if (line.startsWith("(funny)")) { await this._handleFunnyBlock(line, lines, i); continue; }
+
+      // === Other / meta info ===
+      console.log(`ℹ️ HSX meta line: ${line}`);
+    }
+    console.log("✅ HSX execution complete!");
+  }
+
+  // === Helpers ===
+  _extractQuotes(str) { const m = str.match(/"(.*?)"/); return m ? m[1] : ""; }
+
+  _attachMedia(type, src) {
+    const el = document.createElement(type);
+    el.src = src;
+    if (type === "video" || type === "audio") el.controls = true;
+    if (type === "img") el.style.width = "400px";
+    document.body.appendChild(el);
+    console.log(`📎 Attached ${type}: ${src}`);
+  }
+
+  _renderComponent(name) {
+    if (!this.components[name]) return console.warn(`⚠️ Component not found: ${name}`);
+    const el = document.createElement("div");
+    el.innerHTML = this.components[name];
+    document.body.appendChild(el);
+    console.log(`✨ Rendered component: ${name}`);
+  }
+
+  // === JS / Python runners ===
+  async _runJS(code, domSafe = false) {
+    try {
+      if (domSafe) {
+        new Function(`
+          document.addEventListener('DOMContentLoaded', () => {
+            try { ${code} } catch(e) { console.error('❌ JS error:', e); }
+          });
+        `)();
+      } else { new Function(code)(); }
+      console.log("💻 JS executed");
+    } catch(e){ console.error("❌ JS error:", e);}
+  }
+
+  async _runPy(code) {
+    if (this.pyodide) try { await this.pyodide.runPythonAsync(code); console.log("🐍 Python executed"); }
+    catch(e){ console.error("❌ Python error:", e);}
+  }
+
+  // === HSX interpreter ===
+  async _runHSXBlock(code) {
+    if (!this.sandboxed) { console.warn("⚠️ HSX block skipped (sandbox off)"); return; }
+    const lines = code.split("\n").map(l => l.trim());
+    for (let line of lines) {
+      if (!line) continue;
+
+      // === Module execution ===
+      if (line.endsWith(".ps") || line.endsWith(".ks")) { await this._runModule(line.trim()); continue; }
+
+      // === Attachments / legacy parsing ===
+      if (line.includes("eq") || line.includes("-") || line.includes(",")) { this._parseAttachmentLegacy(line); continue; }
+
+      // === Fun / inline code ===
+      if (line.startsWith("hsx:fun")) { await this._runFun(line.replace("hsx:fun","").trim()); continue; }
+      if (line.startsWith("{js")) await this._runJS(line.replace("{js","").replace("}","").trim());
+      else if (line.startsWith("{py")) await this._runPy(line.replace("{py","").replace("}","").trim());
+
+      // === Interactive emotions trigger ===
+      if (this.emotionActive) this._checkEmotions(line);
+    }
+  }
+
+  _parseAttachmentLegacy(line) {
+    const key = line.split("eq")[0].replace("hsx:new","").trim();
+    let val = [];
+    if (line.includes(",")) val = line.split("eq")[1].split(",").map(v=>v.trim());
+    else val = line.split(/eq|-/).slice(1).map(v=>v.trim());
+    this.attachments[key] = val;
+    console.log("📎 Attachment stored:", key, this.attachments[key]);
+  }
+
+  async _runModule(name) {
+    if (this.modules[name]) { 
+      try { await this.modules[name](); console.log(`📦 Module executed: ${name}`); } 
+      catch(e){ console.error("❌ Module error:", e);} 
+    } else console.warn(`⚠️ Module not found: ${name}`);
+  }
+
+  async _handleModules(cmd) {
+    if (cmd.startsWith("Load")) return console.log("📦 Modules loaded");
+    if (cmd.startsWith("create")) {
+      const name = cmd.split(">")[1]?.trim();
+      if (name) this.modules[name] = async () => console.log(`📦 Module ${name} executed`);
+    }
+    if (cmd.startsWith("comb eq")) {
+      const mods = cmd.split("eq")[1].split("+").map(m=>m.trim());
+      this.modules[mods.join("+")] = async () => { for (let m of mods) await this._runModule(m); console.log(`📦 Combined modules executed: ${mods.join("+")}`); }
+    }
+  }
+
+  async _runFun(code) {
+    console.log("🌀 Fun mode running...");
+    const lines = code.split(/[\n;]/).map(l=>l.trim()).filter(Boolean);
+    for (let line of lines) {
+      if (!line) continue;
+      if (line.endsWith(".ps") || line.endsWith(".ks")) await this._runModule(line);
+      else if (line.startsWith("{js")) await this._runJS(line.replace("{js","").replace("}","").trim());
+      else if (line.startsWith("{py")) await this._runPy(line.replace("{py","").replace("}","").trim());
+      else try { new Function(line)(); console.log("🌀 Fun fallback executed:", line); } catch(e){ console.error("❌ Fun fallback error:", e);}
+    }
+  }
+
+  // === NEW: full HSX commands / meta / emotions ===
+  async _handleNewHSXCommands(line) {
+    if (line.startsWith("(hsx) hsx extract modules")) { console.log("📦 HSX module extraction enabled"); return; }
+    if (line.startsWith("(hsx) module extraction")) { console.log("📦 Module extraction flag set"); return; }
+    if (line.startsWith("(hsx) create new file")) { console.log(`📄 New file creation: ${line}`); return; }
+    if (line.startsWith("(hsx) create new block")) {
+      const name = line.replace("(hsx) create new block cal it","").replace(":)","").trim();
+      this.blocks[name] = { data: {}, code: "" };
+      console.log(`🆕 Block created: ${name}`);
+      return;
+    }
+    if (line.startsWith("(hsx) allow data and export")) { this.dataExportActive = true; console.log("📤 Data export enabled"); return; }
+    if (line.startsWith("(hsx) allow emotions")) { this.emotionActive = true; console.log("😃 Emotions enabled"); return; }
+    if (line.startsWith("(hsx) allow meta data set")) { this.metaActive = true; console.log("📝 Meta data enabled"); return; }
+    if (line.startsWith("(hsx) make new meta data tag")) {
+      const tag = line.split(":")[1]?.trim();
+      if (tag) { this.metaTags[tag] = {}; console.log(`🏷️ Meta tag registered: ${tag}`); }
+      return;
+    }
+    console.log("ℹ️ HSX new command:", line);
+  }
+
+  async _handleFunnyBlock(line, lines, i) {
+    const name = line.replace("(funny)","").split(":")[0].trim();
+    const contentLines = [];
+    let j = i + 1;
+    while (j < lines.length && !lines[j].startsWith("(funny)")) { contentLines.push(lines[j]); j++; }
+    this.blocks[name] = { data: {}, code: contentLines.join("\n") };
+    console.log(`😂 Funny block created: ${name}`);
+  }
+
+  // === FULL EMOTIONS HANDLER ===
+  _checkEmotions(line) {
+    // Automatically triggers functions for symbols in line
+    const symbols = [":)", "(:", "):", ":(", ";)", ";(", ");", "(;", "{:}", ").(:"]; // add more as needed
+    for (let sym of symbols) {
+      if (line.includes(sym)) {
+        if (!this.emotions[sym]) {
+          // default behavior: log
+          console.log(`😊 Emotion triggered: ${sym} in line -> "${line}"`);
+        } else {
+          try { this.emotions[sym](line); } catch(e){ console.error("❌ Emotion handler error:", e);}
+        }
+      }
+    }
+  }
+
+  // === Browser-native execution ===
+  async loadFromFile(file) { await this.execute(await file.text()); }
+  async loadFromText(text) { await this.execute(text); }
 }
 
-// Auto-load if linked via <script data-src="...">
-const current = document.currentScript?.dataset?.src;
-if (current) loadHSX(current);
+// === Auto-init ===
+window.HSXRuntime = HSXRuntime;
+
+// === Drag-and-drop ===
+window.addEventListener("DOMContentLoaded", () => {
+  const dropZone = document.createElement("div");
+  dropZone.innerText = "📂 Drop HSX files here";
+  dropZone.style.border = "2px dashed #666";
+  dropZone.style.padding = "20px";
+  dropZone.style.margin = "20px";
+  dropZone.style.textAlign = "center";
+  document.body.appendChild(dropZone);
+
+  dropZone.addEventListener("dragover", e => e.preventDefault());
+  dropZone.addEventListener("drop", async e => {
+    e.preventDefault();
+    for (const file of e.dataTransfer.files) if (file.name.endsWith(".hsx")) { const hsx = new HSXRuntime(); await hsx.loadFromFile(file); }
+  });
+});
+
+// === Auto-load ===
+if (location.search.includes("hsxFiles=")) {
+  const filesParam = new URLSearchParams(location.search).get("hsxFiles");
+  const files = filesParam.split(",");
+  const hsx = new HSXRuntime();
+  hsx.loadFiles(files);
+} else if (location.pathname.endsWith(".hsx")) {
+  const hsx = new HSXRuntime();
+  hsx.load(location.pathname);
+}
