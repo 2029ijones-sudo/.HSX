@@ -11,26 +11,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      # 2. Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
+      # 3. Install extension dependencies
       - name: Install Dependencies
         run: npm install
         working-directory: ./Mist_Extracted
 
+      # 4. Build the extension
       - name: Build HSX Extension
         run: npm run build
         working-directory: ./Mist_Extracted
 
+      # 5. Auto-increment patch version to avoid VS Marketplace conflicts
+      - name: Auto-increment Version
+        run: npm version patch --no-git-tag-version
+        working-directory: ./Mist_Extracted
+
+      # 6. Package the extension (creates .vsix)
       - name: Package HSX Extension
         run: npx vsce package
         working-directory: ./Mist_Extracted
 
+      # 7. Publish to VS Code Marketplace
       - name: Publish HSX Extension
         run: npx vsce publish
         working-directory: ./Mist_Extracted
