@@ -38,18 +38,17 @@ jobs:
           HSX_FILE="${{ env.HSX_FILE }}"
           RUNTIME_PATH="frontend/hsx-runtime.js"
 
-          node << 'EOF'
+          # Write a temporary Node.js script
+          cat << 'JS' > generateHSX.js
           import fs from 'fs';
           import path from 'path';
-          import { HSXRuntime } from './${RUNTIME_PATH}';
+          import { HSXRuntime } from './' + process.env.RUNTIME_PATH;
 
           const idea = process.env.IDEA;
           const hsxFile = process.env.HSX_FILE;
 
           const hsx = new HSXRuntime();
 
-          // Implement a helper in HSXRuntime: generateFromIdea(idea)
-          // that returns a string of HSX code for the idea
           if (typeof hsx.generateFromIdea !== 'function') {
             console.error('❌ HSXRuntime.generateFromIdea not implemented');
             process.exit(1);
@@ -57,10 +56,12 @@ jobs:
 
           const generatedHSX = hsx.generateFromIdea(idea);
 
-          // Save the generated HSX code
           fs.writeFileSync(hsxFile, generatedHSX, 'utf8');
           console.log('✅ Generated HSX file:', hsxFile);
-EOF
+JS
+
+          # Run the script
+          node generateHSX.js
 
       - name: Generate simple index.html embedding the HSX file
         run: |
