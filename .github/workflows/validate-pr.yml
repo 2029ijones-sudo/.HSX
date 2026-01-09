@@ -1,0 +1,68 @@
+name: Validate PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Step 1: Check required files exist
+      - name: Check required files
+        run: |
+          PROJECT_DIR="hsx/Flows/projects"
+          FOUND=0
+
+          for DIR in "$PROJECT_DIR"/*; do
+            [ -d "$DIR" ] || continue
+
+            if [ ! -f "$DIR/custom-lango.txt" ] || [ ! -f "$DIR/language.txt" ]; then
+              continue
+            fi
+
+            # Find sample code file (any file except metadata)
+            SAMPLE_FILE=$(ls "$DIR" | grep -vE '^(custom-lango\.txt|language\.txt|example\.html)$' | head -n 1)
+
+            if [ -n "$SAMPLE_FILE" ]; then
+              echo "Found valid project: $DIR"
+              FOUND=1
+              break
+            fi
+          done
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "Required files missing: custom-lango.txt, language.txt, and a sample code file."
+            exit 1
+          fi
+
+      # Step 2: Check minimum 200 lines
+      - name: Check minimum lines
+        run: |
+          for DIR in hsx/Flows/projects/*; do
+            [ -d "$DIR" ] || continue
+
+            if [ -f "$DIR/language.txt" ]; then
+              LINES=$(wc -l < "$DIR/language.txt")
+              if [ "$LINES" -lt 200 ]; then
+                echo "language.txt in $DIR has less than 200 lines."
+                exit 1
+              fi
+            fi
+
+            SAMPLE_FILE=$(ls "$DIR" | grep -vE '^(custom-lango\.txt|language\.txt|example\.html)$' | head -n 1)
+
+            if [ -n "$SAMPLE_FILE" ]; then
+              LINES=$(wc -l < "$DIR/$SAMPLE_FILE")
+              if [ "$LINES" -lt 200 ]; then
+                echo "$SAMPLE_FILE in $DIR has less than 200 lines."
+                exit 1
+              fi
+            fi
+          done
+
+      # Step 3: Signal validation passed
+      - name: Validation passed
+        run: echo "All required files exist and have at least 200 lines. PR is valid!"
