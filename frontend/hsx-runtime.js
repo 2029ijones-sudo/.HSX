@@ -1,4 +1,4 @@
-// hsx-runtime-full.js — HSX v0.70+ HSXEngine Full Integration
+// hsx-runtime-full.js — HSX v0.71+ HSXEngine Full Integration
 // © 2026 William Isaiah Jones + HSXEngine integration
 
 export class HSXRuntime {
@@ -361,3 +361,4 @@ if (location.search.includes("hsxFiles=")) {
   const hsx = new HSXRuntime();
   hsx.load(location.pathname);
 }
+
