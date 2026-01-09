@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HSX / KSX Evolution Visual Timeline</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #1e1e2f;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+    background: #111133;
+  }
+  .timeline {
+    position: relative;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px 0;
+  }
+  .timeline::after {
+    content: '';
+    position: absolute;
+    width: 4px;
+    background-color: #0ff;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    margin-left: -2px;
+  }
+  .container {
+    position: relative;
+    width: 50%;
+    padding: 20px 40px;
+    box-sizing: border-box;
+    opacity: 0;
+    transform: translateX(-50px);
+    transition: all 1s ease;
+  }
+  .container.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  .left { left: 0; }
+  .right { left: 50%; }
+  .container::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 30px;
+    background: #0ff;
+    border-radius: 50%;
+    border: 4px solid #1e1e2f;
+    z-index: 1;
+  }
+  .right::after { left: -10px; }
+  .left::after { right: -10px; }
+  .content {
+    background: #2a2a40;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,255,255,0.3);
+  }
+  .version {
+    font-weight: bold;
+    font-size: 1.2em;
+    color: #0ff;
+    margin-bottom: 10px;
+  }
+  .controls {
+    text-align: center;
+    margin-top: 30px;
+  }
+  .controls button {
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-size: 1em;
+    background: #0ff;
+    color: #111;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .controls button:hover {
+    background: #08c;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<h1>🌀 HSX / KSX Evolution Timeline</h1>
+
+<div class="timeline" id="timeline">
+  <!-- Timeline nodes -->
+  <div class="container left">
+    <div class="content">
+      <div class="version">Old HSX (v0.1 – v0.49)</div>
+      <ul>
+        <li>Original concept, private ~4 months</li>
+        <li>Experimental workflows only</li>
+        <li>No custom commands yet</li>
+        <li>Basic runtime: logging & placeholder components</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container right">
+    <div class="content">
+      <div class="version">KSX (v0.50 – v0.69)</div>
+      <ul>
+        <li>Built on old HSX ideas</li>
+        <li>Introduced early limited CCCL commands</li>
+        <li>Early runtime: components, attachments, modules</li>
+        <li>Private → partially public</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container left">
+    <div class="content">
+      <div class="version">Transition KSX → HSX (v0.70 – v0.79)</div>
+      <ul>
+        <li>Renamed KSX → HSX</li>
+        <li>Polished runtime & component system</li>
+        <li>CCCL fully functional</li>
+        <li>Modules, attachments, emotions, metadata, drag/drop improved</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container right">
+    <div class="content">
+      <div class="version">Public HSX Initial Release (v0.80 – v0.99)</div>
+      <ul>
+        <li>Posted publicly ~2 months ago</li>
+        <li>Full CCCL runtime</li>
+        <li>Runtime supports components, modules, attachments, emotions, metadata, storage, drag/drop</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container left">
+    <div class="content">
+      <div class="version">Archival of Old KSX / HSX</div>
+      <ul>
+        <li>Old KSX archived</li>
+        <li>Experimental runtimes preserved for history</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container right">
+    <div class="content">
+      <div class="version">Merged old HSX into Public HSX (~v1.0)</div>
+      <ul>
+        <li>Old workflows/examples merged</li>
+        <li>Preserves historical ideas & legacy commands</li>
+        <li>Combines old & new in current HSX repo</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button onclick="prevNode()">⬅ Previous</button>
+  <button onclick="nextNode()">Next ➡</button>
+</div>
+
+<script>
+const nodes = document.querySelectorAll('.timeline .container');
+let current = 0;
+
+function showNode(index) {
+  nodes.forEach((node, i) => {
+    node.classList.remove('visible');
+    if (i === index) node.classList.add('visible');
+  });
+  nodes[index].scrollIntoView({behavior: 'smooth', block: 'center'});
+}
+
+function nextNode() {
+  current = (current + 1) % nodes.length;
+  showNode(current);
+}
+
+function prevNode() {
+  current = (current - 1 + nodes.length) % nodes.length;
+  showNode(current);
+}
+
+// Initialize first node
+showNode(current);
+</script>
+
+</body>
+</html>
