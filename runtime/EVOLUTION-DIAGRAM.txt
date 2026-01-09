@@ -7,7 +7,4 @@ Backend Compiler:
 [hsx-compiler.js] -->  Parsing | Modules | Grammar | Validation
 
 Improvement Summary:
-- Cleaner separation of frontend and backend
-- Stable interpreter core
-- Modular HSX language engine
-- Automated runtime packaging
+Frontend runtime: improved execution, DOM handling, stability
