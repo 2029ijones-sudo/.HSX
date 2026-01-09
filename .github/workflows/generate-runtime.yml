@@ -1,0 +1,55 @@
+name: Generate Runtime
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Generate Runtime JS
+        run: |
+          mkdir -p hsx/Flows/runtimes
+          for DIR in hsx/Flows/projects/*; do
+            [ -d "$DIR" ] || continue
+            LANG_NAME=$(basename "$DIR")
+            LANG_FILE="$DIR/language.txt"
+            SAMPLE_FILE=$(ls "$DIR"/*.language 2>/dev/null | head -n 1)
+            RUNTIME_FILE="hsx/Flows/runtimes/${LANG_NAME}-runtime.js"
+
+            echo "// Auto-generated runtime for $LANG_NAME" > "$RUNTIME_FILE"
+
+            # Step 1: Generate real JS functions for commands
+            if [ -f "$LANG_FILE" ]; then
+              while IFS=: read -r command desc; do
+                if [ -n "$command" ]; then
+                  SAFE_COMMAND=${command// /_}
+                  echo "function $SAFE_COMMAND(...args) { console.log('Executing $command', args); }" >> "$RUNTIME_FILE"
+                fi
+              done < "$LANG_FILE"
+            fi
+
+            # Step 2: Execute sample code
+            if [ -f "$SAMPLE_FILE" ]; then
+              echo "// Execute sample code from $SAMPLE_FILE" >> "$RUNTIME_FILE"
+              while IFS= read -r line; do
+                CMD=$(echo "$line" | awk '{print $1}')
+                ARGS=$(echo "$line" | cut -d' ' -f2-)
+                SAFE_CMD=${CMD// /_}
+                JS_ARGS=$(echo "$ARGS" | sed 's/\([^\ ]\+\)/"\1"/g')
+                echo "$SAFE_CMD($JS_ARGS);" >> "$RUNTIME_FILE"
+              done < "$SAMPLE_FILE"
+            fi
+          done
+
+      - name: Commit and push generated runtimes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add hsx/Flows/runtimes/
+          git commit -m "Auto-generate runtime files" || echo "No changes to commit"
+          git push origin main
