@@ -1,0 +1,77 @@
+name: GFlow
+
+on:
+  push:
+    paths:
+      - '**/*.kmas'         # Replace with your custom file extension
+      - 'runtime.js'
+      - 'LANGUAGE'
+      - '.github/workflows/*.tml'  # Track Node.js package tml files
+  workflow_dispatch:
+
+jobs:
+  execute-custom-code:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 3️⃣ Install dependencies from package.json if exists
+      - name: Install dependencies
+        run: |
+          if [ -f package.json ]; then
+            echo "Installing dependencies from package.json..."
+            npm install
+          fi
+
+      # 4️⃣ Install Node.js packages from .tml files
+      - name: Install Node.js packages from TML
+        run: |
+          for tmlfile in $(find .github/workflows -type f -name "*.tml"); do
+            echo "Installing Node.js packages from $tmlfile..."
+            # Read each line of the tml file as an npm install command
+            while IFS= read -r cmd; do
+              if [[ ! -z "$cmd" ]]; then
+                echo "Running: npm install $cmd"
+                npm install "$cmd"
+              fi
+            done < "$tmlfile"
+          done
+
+      # 5️⃣ Execute custom code files using runtime.js
+      - name: Execute custom code files
+        run: |
+          for file in $(find . -type f -name "*.kmas"); do
+            echo "Running $file..."
+            node runtime.js "$file"
+          done
+
+      # 6️⃣ Add credit to README.md if missing
+      - name: Add credit to README
+        run: |
+          if ! grep -q "Created by Sussybocca" README.md; then
+            echo "\n\nCreated by Sussybocca" >> README.md
+            git config --local user.email "github-actions@github.com"
+            git config --local user.name "GitHub Actions"
+            git add README.md
+            git commit -m "Add credit to Sussybocca"
+            git push
+          fi
+
+      # 7️⃣ Optional: Load custom commands from LANGUAGE file
+      - name: Load custom code commands (optional)
+        run: |
+          if [ -f LANGUAGE ]; then
+            echo "Loading custom code commands..."
+            cp LANGUAGE commands.json
+          else
+            echo "No LANGUAGE file found, skipping."
+          fi
