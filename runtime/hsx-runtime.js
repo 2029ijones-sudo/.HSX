@@ -1,4 +1,4 @@
-// hsx-runtime-full.js — HSX v0.71+ HSXEngine Full Integration
+// hsx-runtime-full.js — HSX v0.72+ FULL UPDATED
 // © 2026 William Isaiah Jones + HSXEngine integration
 
 export class HSXRuntime {
@@ -22,12 +22,16 @@ export class HSXRuntime {
     // HSXEngine fields
     this.botsDB = {};
     this.customDatabaseBlocks = {};
-
     this.storages = {};
     this.physicStorage = {};
     this.customStorages = {};
-
     this.customCodeLines = {};
+
+    // NEW CUSTOM SYSTEM FIELDS
+    this.customLanguages = {};
+    this.fxEnabled = false;
+    this.gameConfig = { pixels: [], fps: 60, reload: false, spawnCorner: false, fx: false };
+    this.jayTagsEnabled = false;
   }
 
   // ---------------- HSXEngine Methods ----------------
@@ -63,10 +67,8 @@ export class HSXRuntime {
     if (line === ":Hsx:") {
       index++;
       let next = lines[index]?.trim();
-
       if (!next) return index;
 
-      // Physic storage
       if (next.startsWith("$")) {
         const storageName = next.replace("$", "").trim();
         this.storages[storageName] ??= {};
@@ -77,9 +79,7 @@ export class HSXRuntime {
           index++;
         }
         this.embedPhysic(storageName);
-      }
-      // Custom storage
-      else if (next.startsWith("create storage")) {
+      } else if (next.startsWith("create storage")) {
         const storageName = next.split(" ").slice(2).join(" ").trim();
         this.createCustomStorage(storageName);
         index++;
@@ -88,9 +88,7 @@ export class HSXRuntime {
           this.customStorages[storageName][k] = v.replace(/"/g, "");
           index++;
         }
-      }
-      // Custom database block
-      else if (next.endsWith(":") && !next.startsWith("$")) {
+      } else if (next.endsWith(":") && !next.startsWith("$")) {
         const dbName = next.replace(":", "");
         this.customDatabaseBlocks[dbName] ??= [];
         index++;
@@ -125,6 +123,71 @@ export class HSXRuntime {
       }
     }
 
+    // -------- NEW HSX CUSTOM LANGUAGE / FX / GAME SYSTEM --------
+    if (line.startsWith(":hsx:")) {
+      const cmd = line.replace(":hsx:", "").trim();
+
+      // CREATE NEW CODING LANGUAGE
+      if (cmd.startsWith("create new coding lango")) {
+        const name = cmd.split("custom lango")[1]?.trim();
+        if (name) this.customLanguages[name] = {};
+        console.log("🧬 New language created:", name);
+      }
+
+      // FX ENABLE
+      if (cmd.includes("fx attach fx")) {
+        this.fxEnabled = true;
+        document.body.style.filter = "hue-rotate(15deg) saturate(1.4)";
+        console.log("✨ FX enabled");
+      }
+
+      // ALLOW CUSTOM LANGUAGE FILES
+      if (cmd.includes("allow new coding language files")) {
+        console.log("📄 New coding language files allowed");
+      }
+
+      // GAME PIXELS
+      if (cmd.includes("game pixel")) {
+        const colors = cmd.match(/red|blue|orange/g) || [];
+        this.gameConfig.pixels = colors;
+      }
+
+      // NEW DATA
+      if (cmd.includes("new data")) {
+        const parts = cmd.split("eq");
+        this.data[parts[0].trim()] = parts[1]?.trim();
+      }
+
+      // NEW FUNCTION
+      if (cmd.includes("new function")) {
+        const name = cmd.split(":")[1]?.trim();
+        if (name) this.context[name] = () => console.log(`🧠 Custom function ${name} called`);
+      }
+
+      // CREATE NEW BLOCK MODE
+      if (cmd.includes("create new block mode")) {
+        const name = cmd.split("call it")[1]?.trim();
+        this.blocks[name] = {};
+        console.log("🧱 New block mode:", name);
+      }
+
+      // GAME SETTINGS
+      if (cmd.includes("reload")) this.gameConfig.reload = true;
+      if (cmd.includes("spawn")) this.gameConfig.spawnCorner = true;
+      if (cmd.includes("fps")) this.gameConfig.fps = parseInt(cmd.match(/\d+/)?.[0] || 60);
+      if (cmd.includes("framerates")) this.gameConfig.fps = parseInt(cmd.match(/\d+/)?.[0] || 60);
+      if (cmd.includes("fx")) this.gameConfig.fx = true;
+
+      // JAY TAGS
+      if (cmd.includes("allow new custom tags jay")) {
+        this.jayTagsEnabled = true;
+        document.body.innerHTML = "";
+        console.log("🏷️ JayTags enabled");
+      }
+
+      return index;
+    }
+
     return index;
   }
 
@@ -133,6 +196,8 @@ export class HSXRuntime {
     for (let i = 0; i < lines.length; i++) {
       i = this.runHSXEngineLine(lines[i], lines, i);
     }
+
+    if (this.gameConfig.pixels.length) this.startPixelGame();
   }
 
   // ---------------- Original HSXRuntime Methods ----------------
@@ -160,7 +225,7 @@ export class HSXRuntime {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const code = await response.text();
       await this.execute(code);
-      this.runHSXEngine(code); // Run HSXEngine features
+      this.runHSXEngine(code);
     } catch (e) {
       console.error(`❌ Failed to load HSX file: ${filePath}`, e);
     }
@@ -172,15 +237,12 @@ export class HSXRuntime {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // === HSXEngine / :Hsx: / CCCL handled here ===
       i = this.runHSXEngineLine(line, lines, i);
 
-      // === Media ===
       if (line.startsWith("hsx attach image")) { this._attachMedia("img", this._extractQuotes(line)); continue; }
       if (line.startsWith("hsx attach video")) { this._attachMedia("video", this._extractQuotes(line)); continue; }
       if (line.startsWith("hsx attach audio")) { this._attachMedia("audio", this._extractQuotes(line)); continue; }
 
-      // === Components ===
       if (line.startsWith("hsx define component")) {
         const name = line.replace("hsx define component", "").trim();
         let body = "";
@@ -192,7 +254,6 @@ export class HSXRuntime {
       }
       if (line.startsWith("hsx render")) { this._renderComponent(line.replace("hsx render", "").trim()); continue; }
 
-      // === JS / Python / HSX blocks ===
       if (line.startsWith("{js") || line.startsWith("{py") || line.startsWith("{hsx")) {
         let block = "";
         const type = line.slice(1, 3);
@@ -204,17 +265,14 @@ export class HSXRuntime {
         continue;
       }
 
-      // === Security mode ===
       if (line.startsWith("hsx security")) {
         this.sandboxed = line.replace("hsx security", "").trim() !== "off";
         console.log(`🔒 HSX security mode: ${this.sandboxed ? "ON" : "OFF"}`);
         continue;
       }
 
-      // === Module commands ===
       if (line.startsWith("hsx modules:")) { await this._handleModules(line.replace("hsx modules:", "").trim()); continue; }
 
-      // === New HSX / Meta / Fun / Emotions ===
       if (line.startsWith("hsx:") || line.startsWith("(hsx)")) { await this._handleNewHSXCommands(line); continue; }
       if (line.startsWith("(funny)")) { await this._handleFunnyBlock(line, lines, i); continue; }
 
@@ -223,142 +281,127 @@ export class HSXRuntime {
     console.log("✅ HSX execution complete!");
   }
 
-  // === Helpers (full runtime functionality) ===
+  // --------- NEW GAME PIXEL SYSTEM ---------
+  startPixelGame() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;
+    canvas.height = 300;
+    canvas.style.position = "fixed";
+    canvas.style.right = "10px";
+    canvas.style.bottom = "10px";
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext("2d");
+    const colors = this.gameConfig.pixels.length ? this.gameConfig.pixels : ["red"];
+
+    setInterval(() => {
+      ctx.clearRect(0,0,300,300);
+      for (let i=0;i<50;i++){
+        ctx.fillStyle = colors[Math.floor(Math.random()*colors.length)];
+        ctx.fillRect(Math.random()*300,Math.random()*300,5,5);
+      }
+    }, 1000 / this.gameConfig.fps);
+  }
+
+  // === FULL HELPER METHODS (all preserved) ===
   _extractQuotes(str) { const m = str.match(/"(.*?)"/); return m ? m[1] : ""; }
-
-  _attachMedia(type, src) { const el = document.createElement(type); el.src = src; if (type === "video" || type === "audio") el.controls = true; if (type === "img") el.style.width = "400px"; document.body.appendChild(el); console.log(`📎 Attached ${type}: ${src}`); }
-
-  _renderComponent(name) { if (!this.components[name]) return console.warn(`⚠️ Component not found: ${name}`); const el = document.createElement("div"); el.innerHTML = this.components[name]; document.body.appendChild(el); console.log(`✨ Rendered component: ${name}`); }
-
-  async _runJS(code, domSafe = false) { try { if (domSafe) { new Function(`document.addEventListener('DOMContentLoaded',()=>{try{${code}}catch(e){console.error('❌ JS error:',e);}}`)(); } else { new Function(code)(); } console.log("💻 JS executed"); } catch(e){ console.error("❌ JS error:", e); } }
-
-  async _runPy(code) { if (this.pyodide) try { await this.pyodide.runPythonAsync(code); console.log("🐍 Python executed"); } catch(e){ console.error("❌ Python error:", e);} }
+  _attachMedia(type, src) { const el = document.createElement(type); el.src = src; if (type==="video"||type==="audio") el.controls=true; if(type==="img") el.style.width="400px"; document.body.appendChild(el); console.log(`📎 Attached ${type}: ${src}`); }
+  _renderComponent(name) { if(!this.components[name]) return console.warn(`⚠️ Component not found: ${name}`); const el=document.createElement("div"); el.innerHTML=this.components[name]; document.body.appendChild(el); console.log(`✨ Rendered component: ${name}`); }
+  async _runJS(code, domSafe=false) { try{ if(domSafe){ new Function(`document.addEventListener('DOMContentLoaded',()=>{try{${code}}catch(e){console.error('❌ JS error:',e);}}`)(); } else { new Function(code)(); } console.log("💻 JS executed"); } catch(e){console.error("❌ JS error:", e);} }
+  async _runPy(code) { if(this.pyodide) try{ await this.pyodide.runPythonAsync(code); console.log("🐍 Python executed"); } catch(e){ console.error("❌ Python error:", e);} }
 
   async _runHSXBlock(code) {
-    if (!this.sandboxed) { console.warn("⚠️ HSX block skipped (sandbox off)"); return; }
-    const lines = code.split("\n").map(l => l.trim());
-    for (let line of lines) {
-      if (!line) continue;
-
-      if (line.endsWith(".ps") || line.endsWith(".ks")) { await this._runModule(line.trim()); continue; }
-      if (line.includes("eq") || line.includes("-") || line.includes(",")) { this._parseAttachmentLegacy(line); continue; }
-      if (line.startsWith("hsx:fun")) { await this._runFun(line.replace("hsx:fun","").trim()); continue; }
-      if (line.startsWith("{js")) await this._runJS(line.replace("{js","").replace("}","").trim());
-      else if (line.startsWith("{py")) await this._runPy(line.replace("{py","").replace("}","").trim());
-      if (this.emotionActive) this._checkEmotions(line);
+    if(!this.sandboxed){ console.warn("⚠️ HSX block skipped (sandbox off)"); return; }
+    const lines = code.split("\n").map(l=>l.trim());
+    for(let line of lines){
+      if(!line) continue;
+      if(line.endsWith(".ps")||line.endsWith(".ks")) { await this._runModule(line.trim()); continue; }
+      if(line.includes("eq")||line.includes("-")||line.includes(",")) { this._parseAttachmentLegacy(line); continue; }
+      if(line.startsWith("hsx:fun")) { await this._runFun(line.replace("hsx:fun","").trim()); continue; }
+      if(line.startsWith("{js")) await this._runJS(line.replace("{js","").replace("}","").trim());
+      else if(line.startsWith("{py")) await this._runPy(line.replace("{py","").replace("}","").trim());
+      if(this.emotionActive) this._checkEmotions(line);
     }
   }
 
-  _parseAttachmentLegacy(line) {
-    const key = line.split("eq")[0].replace("hsx:new","").trim();
-    let val = [];
-    if (line.includes(",")) val = line.split("eq")[1].split(",").map(v=>v.trim());
-    else val = line.split(/eq|-/).slice(1).map(v=>v.trim());
-    this.attachments[key] = val;
-    console.log("📎 Attachment stored:", key, this.attachments[key]);
-  }
+  _parseAttachmentLegacy(line){ const key=line.split("eq")[0].replace("hsx:new","").trim(); let val=[]; if(line.includes(",")) val=line.split("eq")[1].split(",").map(v=>v.trim()); else val=line.split(/eq|-/).slice(1).map(v=>v.trim()); this.attachments[key]=val; console.log("📎 Attachment stored:", key, this.attachments[key]); }
 
-  async _runModule(name) {
-    if (this.modules[name]) { 
-      try { await this.modules[name](); console.log(`📦 Module executed: ${name}`); } 
-      catch(e){ console.error("❌ Module error:", e);} 
-    } else console.warn(`⚠️ Module not found: ${name}`);
-  }
+  async _runModule(name){ if(this.modules[name]){ try{ await this.modules[name](); console.log(`📦 Module executed: ${name}`); } catch(e){ console.error("❌ Module error:", e);} } else console.warn(`⚠️ Module not found: ${name}`); }
 
-  async _handleModules(cmd) {
-    if (cmd.startsWith("Load")) return console.log("📦 Modules loaded");
-    if (cmd.startsWith("create")) {
-      const name = cmd.split(">")[1]?.trim();
-      if (name) this.modules[name] = async () => console.log(`📦 Module ${name} executed`);
-    }
-    if (cmd.startsWith("comb eq")) {
-      const mods = cmd.split("eq")[1].split("+").map(m=>m.trim());
-      this.modules[mods.join("+")] = async () => { for (let m of mods) await this._runModule(m); console.log(`📦 Combined modules executed: ${mods.join("+")}`); }
-    }
-  }
+  async _handleModules(cmd){ if(cmd.startsWith("Load")) return console.log("📦 Modules loaded"); if(cmd.startsWith("create")){ const name=cmd.split(">")[1]?.trim(); if(name) this.modules[name]=async()=>console.log(`📦 Module ${name} executed`);} if(cmd.startsWith("comb eq")){ const mods=cmd.split("eq")[1].split("+").map(m=>m.trim()); this.modules[mods.join("+")]=async()=>{ for(let m of mods) await this._runModule(m); console.log(`📦 Combined modules executed: ${mods.join("+")}`); }}}
 
-  async _runFun(code) {
+  async _runFun(code){
     console.log("🌀 Fun mode running...");
-    const lines = code.split(/[\n;]/).map(l=>l.trim()).filter(Boolean);
-    for (let line of lines) {
-      if (!line) continue;
-      if (line.endsWith(".ps") || line.endsWith(".ks")) await this._runModule(line);
-      else if (line.startsWith("{js")) await this._runJS(line.replace("{js","").replace("}","").trim());
-      else if (line.startsWith("{py")) await this._runPy(line.replace("{py","").replace("}","").trim());
-      else try { new Function(line)(); console.log("🌀 Fun fallback executed:", line); } catch(e){ console.error("❌ Fun fallback error:", e);}
+    const lines=code.split(/[\n;]/).map(l=>l.trim()).filter(Boolean);
+    for(let line of lines){
+      if(!line) continue;
+      if(line.endsWith(".ps")||line.endsWith(".ks")) await this._runModule(line);
+      else if(line.startsWith("{js")) await this._runJS(line.replace("{js","").replace("}","").trim());
+      else if(line.startsWith("{py")) await this._runPy(line.replace("{py","").replace("}","").trim());
+      else try{ new Function(line)(); console.log("🌀 Fun fallback executed:", line); } catch(e){ console.error("❌ Fun fallback error:", e);}
     }
   }
 
-  async _handleNewHSXCommands(line) {
-    if (line.startsWith("(hsx) hsx extract modules")) { console.log("📦 HSX module extraction enabled"); return; }
-    if (line.startsWith("(hsx) module extraction")) { console.log("📦 Module extraction flag set"); return; }
-    if (line.startsWith("(hsx) create new file")) { console.log(`📄 New file creation: ${line}`); return; }
-    if (line.startsWith("(hsx) create new block")) {
-      const name = line.replace("(hsx) create new block cal it","").replace(":)","").trim();
-      this.blocks[name] = { data: {}, code: "" };
-      console.log(`🆕 Block created: ${name}`);
-      return;
-    }
-    if (line.startsWith("(hsx) allow data and export")) { this.dataExportActive = true; console.log("📤 Data export enabled"); return; }
-    if (line.startsWith("(hsx) allow emotions")) { this.emotionActive = true; console.log("😃 Emotions enabled"); return; }
-    if (line.startsWith("(hsx) allow meta data set")) { this.metaActive = true; console.log("📝 Meta data enabled"); return; }
-    if (line.startsWith("(hsx) make new meta data tag")) {
-      const tag = line.split(":")[1]?.trim();
-      if (tag) { this.metaTags[tag] = {}; console.log(`🏷️ Meta tag registered: ${tag}`); }
-      return;
-    }
+  async _handleNewHSXCommands(line){
+    if(line.startsWith("(hsx) hsx extract modules")){ console.log("📦 HSX module extraction enabled"); return; }
+    if(line.startsWith("(hsx) module extraction")){ console.log("📦 Module extraction flag set"); return; }
+    if(line.startsWith("(hsx) create new file")){ console.log(`📄 New file creation: ${line}`); return; }
+    if(line.startsWith("(hsx) create new block")){ const name=line.replace("(hsx) create new block cal it","").replace(":)","").trim(); this.blocks[name]={data:{},code:""}; console.log(`🆕 Block created: ${name}`); return; }
+    if(line.startsWith("(hsx) allow data and export")){ this.dataExportActive=true; console.log("📤 Data export enabled"); return; }
+    if(line.startsWith("(hsx) allow emotions")){ this.emotionActive=true; console.log("😃 Emotions enabled"); return; }
+    if(line.startsWith("(hsx) allow meta data set")){ this.metaActive=true; console.log("📝 Meta data enabled"); return; }
+    if(line.startsWith("(hsx) make new meta data tag")){ const tag=line.split(":")[1]?.trim(); if(tag){ this.metaTags[tag]={}; console.log(`🏷️ Meta tag registered: ${tag}`);} return; }
     console.log("ℹ️ HSX new command:", line);
   }
 
-  async _handleFunnyBlock(line, lines, i) {
-    const name = line.replace("(funny)","").split(":")[0].trim();
-    const contentLines = [];
-    let j = i + 1;
-    while (j < lines.length && !lines[j].startsWith("(funny)")) { contentLines.push(lines[j]); j++; }
-    this.blocks[name] = { data: {}, code: contentLines.join("\n") };
+  async _handleFunnyBlock(line, lines, i){
+    const name=line.replace("(funny)","").split(":")[0].trim();
+    const contentLines=[];
+    let j=i+1;
+    while(j<lines.length && !lines[j].startsWith("(funny)")) contentLines.push(lines[j++]);
+    this.blocks[name]={data:{},code:contentLines.join("\n")};
     console.log(`😂 Funny block created: ${name}`);
   }
 
-  _checkEmotions(line) {
-    const symbols = [":)", "(:", "):", ":(", ";)", ";(", ");", "(;", "{:}", ").(:"];
-    for (let sym of symbols) {
-      if (line.includes(sym)) {
-        if (!this.emotions[sym]) console.log(`😊 Emotion triggered: ${sym} in line -> "${line}"`);
-        else try { this.emotions[sym](line); } catch(e){ console.error("❌ Emotion handler error:", e);}
+  _checkEmotions(line){
+    const symbols=[":)", "(:", "):", ":(", ";)", ";(", ");", "(;", "{:}", ").(:"];
+    for(let sym of symbols){
+      if(line.includes(sym)){
+        if(!this.emotions[sym]) console.log(`😊 Emotion triggered: ${sym} in line -> "${line}"`);
+        else try{ this.emotions[sym](line);} catch(e){ console.error("❌ Emotion handler error:", e);}
       }
     }
   }
 
-  async loadFromFile(file) { await this.execute(await file.text()); }
-  async loadFromText(text) { await this.execute(text); }
+  async loadFromFile(file){ await this.execute(await file.text()); }
+  async loadFromText(text){ await this.execute(text); }
 }
 
-// Auto-init & drag-drop & auto-load
-window.HSXRuntime = HSXRuntime;
+// Auto-init, drag-drop & auto-load
+window.HSXRuntime=HSXRuntime;
 
-window.addEventListener("DOMContentLoaded", () => {
-  const dropZone = document.createElement("div");
-  dropZone.innerText = "📂 Drop HSX files here";
-  dropZone.style.border = "2px dashed #666";
-  dropZone.style.padding = "20px";
-  dropZone.style.margin = "20px";
-  dropZone.style.textAlign = "center";
+window.addEventListener("DOMContentLoaded",()=>{
+  const dropZone=document.createElement("div");
+  dropZone.innerText="📂 Drop HSX files here";
+  dropZone.style.border="2px dashed #666";
+  dropZone.style.padding="20px";
+  dropZone.style.margin="20px";
+  dropZone.style.textAlign="center";
   document.body.appendChild(dropZone);
 
-  dropZone.addEventListener("dragover", e => e.preventDefault());
-  dropZone.addEventListener("drop", async e => {
+  dropZone.addEventListener("dragover",e=>e.preventDefault());
+  dropZone.addEventListener("drop",async e=>{
     e.preventDefault();
-    for (const file of e.dataTransfer.files) if (file.name.endsWith(".hsx")) { const hsx = new HSXRuntime(); await hsx.loadFromFile(file); }
+    for(const file of e.dataTransfer.files) if(file.name.endsWith(".hsx")){ const hsx=new HSXRuntime(); await hsx.loadFromFile(file); }
   });
 });
 
-if (location.search.includes("hsxFiles=")) {
-  const filesParam = new URLSearchParams(location.search).get("hsxFiles");
-  const files = filesParam.split(",");
-  const hsx = new HSXRuntime();
+if(location.search.includes("hsxFiles=")){
+  const filesParam=new URLSearchParams(location.search).get("hsxFiles");
+  const files=filesParam.split(",");
+  const hsx=new HSXRuntime();
   hsx.loadFiles(files);
-} else if (location.pathname.endsWith(".hsx")) {
-  const hsx = new HSXRuntime();
+}else if(location.pathname.endsWith(".hsx")){
+  const hsx=new HSXRuntime();
   hsx.load(location.pathname);
 }
-
