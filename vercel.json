@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    // Main HSX Animation Site
+    
     {
       "source": "/",
       "destination": "/docs/index.html"
@@ -10,7 +10,7 @@
       "destination": "/docs/:path*"
     },
     
-    // HSX Example Site
+    
     {
       "source": "/example",
       "destination": "/HSX_SITE_EXAMPLE/index.html"
@@ -20,7 +20,7 @@
       "destination": "/HSX_SITE_EXAMPLE/:path*"
     },
     
-    // Static file handling
+    
     {
       "source": "/(.*\\.(hsx|html|js|css|png|jpg|gif|svg|ico|json))",
       "destination": "/:1"
