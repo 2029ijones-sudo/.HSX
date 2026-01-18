@@ -1,199 +1,1290 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>HSX / KSX Evolution Visual Timeline</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #1e1e2f;
-    color: #f0f0f0;
-    margin: 0;
-    padding: 0;
-  }
-  h1 {
-    text-align: center;
-    padding: 20px;
-    margin: 0;
-    background: #111133;
-  }
-  .timeline {
-    position: relative;
-    max-width: 900px;
-    margin: 40px auto;
-    padding: 20px 0;
-  }
-  .timeline::after {
-    content: '';
-    position: absolute;
-    width: 4px;
-    background-color: #0ff;
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    margin-left: -2px;
-  }
-  .container {
-    position: relative;
-    width: 50%;
-    padding: 20px 40px;
-    box-sizing: border-box;
-    opacity: 0;
-    transform: translateX(-50px);
-    transition: all 1s ease;
-  }
-  .container.visible {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  .left { left: 0; }
-  .right { left: 50%; }
-  .container::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    top: 30px;
-    background: #0ff;
-    border-radius: 50%;
-    border: 4px solid #1e1e2f;
-    z-index: 1;
-  }
-  .right::after { left: -10px; }
-  .left::after { right: -10px; }
-  .content {
-    background: #2a2a40;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0,255,255,0.3);
-  }
-  .version {
-    font-weight: bold;
-    font-size: 1.2em;
-    color: #0ff;
-    margin-bottom: 10px;
-  }
-  .controls {
-    text-align: center;
-    margin-top: 30px;
-  }
-  .controls button {
-    padding: 10px 20px;
-    margin: 0 10px;
-    font-size: 1em;
-    background: #0ff;
-    color: #111;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-  .controls button:hover {
-    background: #08c;
-    color: #fff;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌀 HSX/KSX Evolution - Ultimate Immersive Experience</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/EffectComposer.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/RenderPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/ShaderPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/CopyShader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/GlitchPass.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/BloomPass.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #000;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+            cursor: default;
+        }
+
+        #three-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .content-overlay {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .content-overlay > * {
+            pointer-events: auto;
+        }
+
+        /* Massive Header */
+        .main-header {
+            text-align: center;
+            padding: 100px 20px 60px;
+            position: relative;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            border-bottom: 3px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 80px rgba(0, 255, 255, 0.2);
+            margin-bottom: 100px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 5rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #0ff, #f0f, #0ff, #ff0, #0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.7);
+            letter-spacing: 5px;
+            line-height: 1.1;
+            animation: titleGlow 3s infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 30px rgba(0, 255, 255, 0.7), 0 0 60px rgba(0, 150, 255, 0.5); }
+            100% { text-shadow: 0 0 40px rgba(0, 255, 255, 1), 0 0 80px rgba(0, 150, 255, 0.8), 0 0 120px rgba(0, 100, 255, 0.6); }
+        }
+
+        .subtitle {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            color: #a0f0ff;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+            text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+            animation: subtitleFloat 4s infinite ease-in-out;
+        }
+
+        @keyframes subtitleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Interactive Timeline */
+        .timeline-container {
+            position: relative;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 100px 40px;
+            min-height: 200vh;
+        }
+
+        /* 3D Timeline Line */
+        .timeline-line-3d {
+            position: fixed;
+            left: 50%;
+            top: 0;
+            height: 100%;
+            width: 6px;
+            transform: translateX(-50%) perspective(500px) rotateX(60deg);
+            z-index: 5;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                #0ff 10%, 
+                #0ff 90%, 
+                transparent 100%);
+            box-shadow: 
+                0 0 40px #0ff,
+                0 0 80px #0ff,
+                0 0 120px #0ff;
+            opacity: 0.7;
+        }
+
+        /* Timeline Nodes */
+        .timeline-node {
+            position: absolute;
+            width: 45%;
+            min-height: 300px;
+            opacity: 0;
+            transform-style: preserve-3d;
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 20;
+            padding: 30px;
+        }
+
+        .timeline-node.left {
+            left: 5%;
+        }
+
+        .timeline-node.right {
+            right: 5%;
+        }
+
+        .node-content {
+            background: rgba(10, 20, 40, 0.9);
+            border-radius: 20px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            transform-style: preserve-3d;
+            transition: all 0.5s ease;
+        }
+
+        .node-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #0ff, #f0f, #0ff);
+            z-index: 2;
+        }
+
+        .node-content::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent 30%, rgba(0, 255, 255, 0.1) 50%, transparent 70%);
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .node-content:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: #0ff;
+            box-shadow: 
+                0 20px 60px rgba(0, 255, 255, 0.3),
+                inset 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+
+        .node-content:hover::after {
+            opacity: 1;
+        }
+
+        .node-version {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0ff;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 15px;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.8);
+        }
+
+        .node-version::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, #0ff, transparent);
+        }
+
+        .node-content ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .node-content li {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            padding-left: 30px;
+            position: relative;
+            line-height: 1.5;
+            color: #d0f0ff;
+        }
+
+        .node-content li::before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: #0ff;
+            font-size: 1rem;
+            animation: bulletPulse 2s infinite;
+        }
+
+        @keyframes bulletPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        /* Connection Orbs */
+        .node-orb {
+            position: absolute;
+            top: 50%;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0ff;
+            box-shadow: 
+                0 0 20px #0ff,
+                0 0 40px #0ff,
+                0 0 60px #0ff;
+            z-index: 10;
+            transform: translateY(-50%);
+            animation: orbPulse 2s infinite alternate;
+        }
+
+        .timeline-node.left .node-orb {
+            right: -75px;
+        }
+
+        .timeline-node.right .node-orb {
+            left: -75px;
+        }
+
+        @keyframes orbPulse {
+            0% { transform: translateY(-50%) scale(1); box-shadow: 0 0 20px #0ff, 0 0 40px #0ff; }
+            100% { transform: translateY(-50%) scale(1.3); box-shadow: 0 0 30px #0ff, 0 0 60px #0ff, 0 0 90px #0ff; }
+        }
+
+        /* Connection Beams */
+        .connection-beam {
+            position: absolute;
+            top: 50%;
+            height: 3px;
+            background: linear-gradient(90deg, #0ff, transparent);
+            z-index: 9;
+            transform: translateY(-50%);
+            opacity: 0.5;
+        }
+
+        .timeline-node.left .connection-beam {
+            right: -45px;
+            width: 45px;
+        }
+
+        .timeline-node.right .connection-beam {
+            left: -45px;
+            width: 45px;
+            background: linear-gradient(90deg, transparent, #0ff);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(10, 20, 40, 0.9);
+            border-radius: 15px;
+            padding: 20px 40px;
+            display: flex;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        .control-btn {
+            background: linear-gradient(145deg, #0a1a2a, #001020);
+            border: 2px solid #0ff;
+            color: #0ff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(145deg, #001020, #0a1a2a);
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.5),
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Progress Indicator */
+        .progress-indicator {
+            position: fixed;
+            top: 50%;
+            right: 30px;
+            transform: translateY(-50%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .progress-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3);
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.active {
+            background: #0ff;
+            box-shadow: 0 0 20px #0ff;
+            transform: scale(1.5);
+        }
+
+        .progress-dot:hover {
+            transform: scale(1.2);
+            background: #0ff;
+        }
+
+        /* Sound Controls */
+        .sound-controls {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+
+        .sound-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(10, 20, 40, 0.9);
+            border: 2px solid #0ff;
+            color: #0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+
+        .sound-btn:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            transform: scale(1.1);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            z-index: 100;
+            background: rgba(10, 20, 40, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 300px;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            transform: translateX(-100%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .info-panel.active {
+            transform: translateX(0);
+        }
+
+        .info-toggle {
+            position: absolute;
+            right: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(10, 20, 40, 0.9);
+            border: 2px solid #0ff;
+            color: #0ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Fullscreen immersive effect */
+        .fullscreen-immersion {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+
+        .fullscreen-immersion.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .immersion-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4rem;
+            text-align: center;
+            background: linear-gradient(90deg, #0ff, #f0f, #ff0, #0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 30px rgba(0, 255, 255, 0.7);
+            animation: immersionPulse 2s infinite alternate;
+        }
+
+        @keyframes immersionPulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 1200px) {
+            .timeline-node {
+                width: 90%;
+                left: 5% !important;
+                right: auto !important;
+            }
+            
+            .timeline-node .node-orb {
+                left: -75px !important;
+                right: auto !important;
+            }
+            
+            .timeline-node .connection-beam {
+                left: -45px !important;
+                right: auto !important;
+                background: linear-gradient(90deg, transparent, #0ff) !important;
+            }
+            
+            .timeline-line-3d {
+                left: 10%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .node-content {
+                padding: 20px;
+            }
+            
+            .node-version {
+                font-size: 1.8rem;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+                width: 90%;
+                bottom: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<h1>🌀 HSX / KSX Evolution Timeline</h1>
-
-<div class="timeline" id="timeline">
-  <!-- Timeline nodes -->
-  <div class="container left">
-    <div class="content">
-      <div class="version">Old HSX (v0.1 – v0.49)</div>
-      <ul>
-        <li>Original concept, private ~4 months</li>
-        <li>Experimental workflows only</li>
-        <li>No custom commands yet</li>
-        <li>Basic runtime: logging & placeholder components</li>
-      </ul>
+    <!-- Three.js Container -->
+    <div id="three-container"></div>
+    
+    <!-- Content Overlay -->
+    <div class="content-overlay">
+        <!-- Header -->
+        <header class="main-header">
+            <h1>🌀 HSX / KSX EVOLUTION</h1>
+            <p class="subtitle">A VISUAL JOURNEY THROUGH THE METAMORPHOSIS OF A DIGITAL ECOSYSTEM</p>
+        </header>
+        
+        <!-- 3D Timeline Line -->
+        <div class="timeline-line-3d"></div>
+        
+        <!-- Timeline Container -->
+        <div class="timeline-container" id="timeline-container">
+            <!-- Timeline Nodes will be positioned here by JavaScript -->
+        </div>
+        
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <button class="control-btn" id="prev-btn">
+                <i class="fas fa-chevron-left"></i> Previous Era
+            </button>
+            <button class="control-btn" id="auto-btn">
+                <i class="fas fa-play"></i> Auto Journey
+            </button>
+            <button class="control-btn" id="next-btn">
+                Next Era <i class="fas fa-chevron-right"></i>
+            </button>
+            <button class="control-btn" id="immerse-btn">
+                <i class="fas fa-expand"></i> Full Immersion
+            </button>
+        </div>
+        
+        <!-- Progress Indicator -->
+        <div class="progress-indicator" id="progress-indicator">
+            <!-- Dots will be added by JavaScript -->
+        </div>
+        
+        <!-- Sound Controls -->
+        <div class="sound-controls">
+            <button class="sound-btn" id="music-btn">
+                <i class="fas fa-music"></i>
+            </button>
+            <button class="sound-btn" id="sfx-btn">
+                <i class="fas fa-volume-up"></i>
+            </button>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="info-panel" id="info-panel">
+            <h3 style="color: #0ff; margin-bottom: 15px;">TIMELINE NAVIGATION</h3>
+            <p style="margin-bottom: 10px;">• Use arrow buttons or scroll to navigate eras</p>
+            <p style="margin-bottom: 10px;">• Click timeline dots for quick access</p>
+            <p style="margin-bottom: 10px;">• Hover over nodes for detailed effects</p>
+            <p style="margin-bottom: 10px;">• Full Immersion mode for cinematic experience</p>
+            <p style="color: #a0f0ff; font-size: 0.9rem; margin-top: 20px;">Total Timeline Span: 4+ years of evolution</p>
+            <button class="info-toggle" id="info-toggle">
+                <i class="fas fa-info"></i>
+            </button>
+        </div>
+        
+        <!-- Fullscreen Immersion -->
+        <div class="fullscreen-immersion" id="fullscreen-immersion">
+            <div class="immersion-text" id="immersion-text">ENTERING THE HSX MATRIX</div>
+        </div>
     </div>
-  </div>
-  <div class="container right">
-    <div class="content">
-      <div class="version">KSX (v0.50 – v0.69)</div>
-      <ul>
-        <li>Built on old HSX ideas</li>
-        <li>Introduced early limited CCCL commands</li>
-        <li>Early runtime: components, attachments, modules</li>
-        <li>Private → partially public</li>
-      </ul>
-    </div>
-  </div>
-  <div class="container left">
-    <div class="content">
-      <div class="version">Transition KSX → HSX (v0.70 – v0.79)</div>
-      <ul>
-        <li>Renamed KSX → HSX</li>
-        <li>Polished runtime & component system</li>
-        <li>CCCL fully functional</li>
-        <li>Modules, attachments, emotions, metadata, drag/drop improved</li>
-      </ul>
-    </div>
-  </div>
-  <div class="container right">
-    <div class="content">
-      <div class="version">Public HSX Initial Release (v0.80 – v0.99)</div>
-      <ul>
-        <li>Posted publicly ~2 months ago</li>
-        <li>Full CCCL runtime</li>
-        <li>Runtime supports components, modules, attachments, emotions, metadata, storage, drag/drop</li>
-      </ul>
-    </div>
-  </div>
-  <div class="container left">
-    <div class="content">
-      <div class="version">Archival of Old KSX / HSX</div>
-      <ul>
-        <li>Old KSX archived</li>
-        <li>Experimental runtimes preserved for history</li>
-      </ul>
-    </div>
-  </div>
-  <div class="container right">
-    <div class="content">
-      <div class="version">Merged old HSX into Public HSX (~v1.0)</div>
-      <ul>
-        <li>Old workflows/examples merged</li>
-        <li>Preserves historical ideas & legacy commands</li>
-        <li>Combines old & new in current HSX repo</li>
-      </ul>
-    </div>
-  </div>
-</div>
 
-<div class="controls">
-  <button onclick="prevNode()">⬅ Previous</button>
-  <button onclick="nextNode()">Next ➡</button>
-</div>
+    <!-- Audio Elements -->
+    <audio id="bg-music" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="transition-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-loop-493.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // Timeline Data
+        const timelineData = [
+            {
+                version: "Old HSX (v0.1 – v0.49)",
+                position: "left",
+                content: [
+                    "Original concept, private ~4 months",
+                    "Experimental workflows only",
+                    "No custom commands yet",
+                    "Basic runtime: logging & placeholder components"
+                ],
+                color: "#0ff"
+            },
+            {
+                version: "KSX (v0.50 – v0.69)",
+                position: "right", 
+                content: [
+                    "Built on old HSX ideas",
+                    "Introduced early limited CCCL commands",
+                    "Early runtime: components, attachments, modules",
+                    "Private → partially public"
+                ],
+                color: "#f0f"
+            },
+            {
+                version: "Transition KSX → HSX (v0.70 – v0.79)",
+                position: "left",
+                content: [
+                    "Renamed KSX → HSX",
+                    "Polished runtime & component system",
+                    "CCCL fully functional",
+                    "Modules, attachments, emotions, metadata, drag/drop improved"
+                ],
+                color: "#ff0"
+            },
+            {
+                version: "Public HSX Initial Release (v0.80 – v0.99)",
+                position: "right",
+                content: [
+                    "Posted publicly ~2 months ago",
+                    "Full CCCL runtime",
+                    "Runtime supports components, modules, attachments, emotions, metadata, storage, drag/drop"
+                ],
+                color: "#0f0"
+            },
+            {
+                version: "Archival of Old KSX / HSX",
+                position: "left",
+                content: [
+                    "Old KSX archived",
+                    "Experimental runtimes preserved for history"
+                ],
+                color: "#f00"
+            },
+            {
+                version: "Merged old HSX into Public HSX (~v1.0)",
+                position: "right",
+                content: [
+                    "Old workflows/examples merged",
+                    "Preserves historical ideas & legacy commands",
+                    "Combines old & new in current HSX repo"
+                ],
+                color: "#0ff"
+            }
+        ];
 
-<script>
-const nodes = document.querySelectorAll('.timeline .container');
-let current = 0;
+        // Global Variables
+        let currentEra = 0;
+        let autoJourneyInterval = null;
+        let isAutoJourney = false;
+        let scene, camera, renderer, composer;
+        let particles = [];
+        let isMusicPlaying = false;
+        let isSFXEnabled = true;
+        let isInfoPanelActive = false;
 
-function showNode(index) {
-  nodes.forEach((node, i) => {
-    node.classList.remove('visible');
-    if (i === index) node.classList.add('visible');
-  });
-  nodes[index].scrollIntoView({behavior: 'smooth', block: 'center'});
-}
+        // Initialize Three.js Scene
+        function initThreeJS() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x000000, 1, 1000);
 
-function nextNode() {
-  current = (current + 1) % nodes.length;
-  showNode(current);
-}
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 50;
 
-function prevNode() {
-  current = (current - 1 + nodes.length) % nodes.length;
-  showNode(current);
-}
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('three-container').appendChild(renderer.domElement);
 
-// Initialize first node
-showNode(current);
-</script>
+            // Create particle system
+            createParticleSystem();
+            
+            // Create floating orbs
+            createFloatingOrbs();
+            
+            // Create nebula effect
+            createNebula();
+            
+            // Post-processing
+            initPostProcessing();
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start animation loop
+            animate();
+        }
 
+        function createParticleSystem() {
+            const particleCount = 2000;
+            const particleGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 1000;
+                positions[i + 1] = (Math.random() - 0.5) * 1000;
+                positions[i + 2] = (Math.random() - 0.5) * 1000;
+
+                colors[i] = Math.random() * 0.5 + 0.5;
+                colors[i + 1] = Math.random() * 0.5 + 0.5;
+                colors[i + 2] = Math.random();
+            }
+
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particleSystem);
+            particles.push(particleSystem);
+        }
+
+        function createFloatingOrbs() {
+            const orbCount = 12;
+            const orbGeometry = new THREE.SphereGeometry(2, 32, 32);
+            
+            for (let i = 0; i < orbCount; i++) {
+                const orbMaterial = new THREE.MeshBasicMaterial({
+                    color: new THREE.Color(Math.random() * 0xffffff),
+                    transparent: true,
+                    opacity: 0.6,
+                    wireframe: true
+                });
+                
+                const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+                
+                // Position orbs in a spherical pattern
+                const radius = 30 + Math.random() * 40;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                
+                orb.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                orb.position.y = radius * Math.sin(phi) * Math.sin(theta);
+                orb.position.z = radius * Math.cos(phi);
+                
+                orb.userData = {
+                    radius: radius,
+                    theta: theta,
+                    phi: phi,
+                    speed: 0.001 + Math.random() * 0.002
+                };
+                
+                scene.add(orb);
+                particles.push(orb);
+            }
+        }
+
+        function createNebula() {
+            const nebulaGeometry = new THREE.SphereGeometry(200, 32, 32);
+            const nebulaMaterial = new THREE.ShaderMaterial({
+                uniforms: {
+                    time: { value: 0.0 }
+                },
+                vertexShader: `
+                    varying vec3 vPosition;
+                    void main() {
+                        vPosition = position;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float time;
+                    varying vec3 vPosition;
+                    void main() {
+                        float intensity = sin(vPosition.x * 0.1 + time) * 0.5 + 0.5;
+                        intensity *= sin(vPosition.y * 0.05 + time * 0.5) * 0.3 + 0.7;
+                        intensity *= sin(vPosition.z * 0.08 + time * 0.3) * 0.4 + 0.6;
+                        
+                        vec3 color1 = vec3(0.0, 0.5, 1.0);
+                        vec3 color2 = vec3(1.0, 0.0, 0.5);
+                        vec3 color3 = vec3(0.5, 1.0, 0.0);
+                        
+                        vec3 finalColor = mix(color1, color2, intensity);
+                        finalColor = mix(finalColor, color3, sin(time * 0.2) * 0.5 + 0.5);
+                        
+                        gl_FragColor = vec4(finalColor, 0.05 * intensity);
+                    }
+                `,
+                transparent: true,
+                side: THREE.BackSide
+            });
+            
+            const nebula = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
+            scene.add(nebula);
+            particles.push(nebulaMaterial);
+        }
+
+        function initPostProcessing() {
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(new THREE.RenderPass(scene, camera));
+
+            // Add bloom effect
+            const bloomPass = new THREE.BloomPass(1.5, 25, 5, 256);
+            composer.addPass(bloomPass);
+
+            // Add glitch effect (subtle)
+            const glitchPass = new THREE.GlitchPass();
+            glitchPass.goWild = false;
+            glitchPass.enabled = false;
+            composer.addPass(glitchPass);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Animate particles
+            particles.forEach((particle, index) => {
+                if (particle.userData) {
+                    // Animate floating orbs
+                    particle.userData.theta += particle.userData.speed;
+                    particle.position.x = particle.userData.radius * Math.sin(particle.userData.phi) * Math.cos(particle.userData.theta);
+                    particle.position.y = particle.userData.radius * Math.sin(particle.userData.phi) * Math.sin(particle.userData.theta);
+                    
+                    // Add slight bobbing motion
+                    particle.position.y += Math.sin(Date.now() * 0.001 + index) * 0.5;
+                }
+                
+                // Rotate nebula
+                if (particle.isMesh && particle.geometry.type === 'SphereGeometry' && particle.material.uniforms) {
+                    particle.rotation.y += 0.0005;
+                    particle.rotation.x += 0.0003;
+                    if (particle.material.uniforms.time) {
+                        particle.material.uniforms.time.value = Date.now() * 0.001;
+                    }
+                }
+            });
+
+            // Rotate particle system
+            if (particles[0]) {
+                particles[0].rotation.y += 0.001;
+                particles[0].rotation.x += 0.0005;
+            }
+
+            // Update camera based on scroll
+            updateCameraPosition();
+            
+            // Render
+            composer.render();
+        }
+
+        function updateCameraPosition() {
+            const scrollPercent = window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight);
+            camera.position.z = 50 + scrollPercent * 30;
+            camera.position.y = scrollPercent * 20;
+            
+            // Add subtle camera movement
+            camera.position.x = Math.sin(Date.now() * 0.0005) * 5;
+            camera.lookAt(scene.position);
+        }
+
+        // Initialize Timeline
+        function initTimeline() {
+            const container = document.getElementById('timeline-container');
+            const progressIndicator = document.getElementById('progress-indicator');
+            
+            // Calculate positions
+            const containerHeight = container.offsetHeight;
+            const nodeSpacing = containerHeight / (timelineData.length + 1);
+            
+            timelineData.forEach((era, index) => {
+                // Create timeline node
+                const node = document.createElement('div');
+                node.className = `timeline-node ${era.position}`;
+                node.style.top = `${(index + 1) * nodeSpacing}px`;
+                node.dataset.era = index;
+                
+                // Create node content
+                node.innerHTML = `
+                    <div class="node-content">
+                        <div class="node-version">${era.version}</div>
+                        <ul>
+                            ${era.content.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="node-orb" style="background: ${era.color}; box-shadow: 0 0 20px ${era.color}"></div>
+                    <div class="connection-beam" style="background: linear-gradient(90deg, ${era.position === 'left' ? '#0ff, transparent' : 'transparent, #0ff'})"></div>
+                `;
+                
+                container.appendChild(node);
+                
+                // Create progress dot
+                const dot = document.createElement('div');
+                dot.className = 'progress-dot';
+                if (index === 0) dot.classList.add('active');
+                dot.dataset.era = index;
+                dot.addEventListener('click', () => goToEra(index));
+                progressIndicator.appendChild(dot);
+                
+                // Add hover effect
+                node.addEventListener('mouseenter', () => {
+                    if (!isAutoJourney) {
+                        highlightEra(index);
+                    }
+                });
+            });
+            
+            // Initialize GSAP animations
+            gsap.registerPlugin(ScrollTrigger);
+            
+            // Create scroll-triggered animations for timeline nodes
+            document.querySelectorAll('.timeline-node').forEach((node, index) => {
+                gsap.fromTo(node,
+                    {
+                        opacity: 0,
+                        y: 100,
+                        rotationY: index % 2 === 0 ? -30 : 30
+                    },
+                    {
+                        opacity: 1,
+                        y: 0,
+                        rotationY: 0,
+                        duration: 1.5,
+                        ease: "power3.out",
+                        scrollTrigger: {
+                            trigger: node,
+                            start: "top 80%",
+                            end: "top 30%",
+                            toggleActions: "play none none reverse"
+                        }
+                    }
+                );
+            });
+            
+            // Parallax effect for timeline line
+            gsap.to('.timeline-line-3d', {
+                scrollTrigger: {
+                    scrub: 0.5
+                },
+                height: '100%',
+                ease: "none"
+            });
+        }
+
+        // Timeline Navigation
+        function goToEra(index) {
+            if (index < 0 || index >= timelineData.length) return;
+            
+            currentEra = index;
+            
+            // Update active dot
+            document.querySelectorAll('.progress-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === index);
+            });
+            
+            // Scroll to era
+            const nodes = document.querySelectorAll('.timeline-node');
+            if (nodes[index]) {
+                nodes[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Play transition sound
+            if (isSFXEnabled) {
+                document.getElementById('transition-sound').currentTime = 0;
+                document.getElementById('transition-sound').play();
+            }
+            
+            // Trigger visual effect
+            highlightEra(index);
+        }
+
+        function highlightEra(index) {
+            const nodes = document.querySelectorAll('.timeline-node');
+            const orbs = document.querySelectorAll('.node-orb');
+            
+            // Reset all nodes
+            nodes.forEach(node => {
+                node.style.transform = 'scale(1)';
+                node.style.zIndex = '20';
+            });
+            
+            // Highlight current node
+            if (nodes[index]) {
+                nodes[index].style.transform = 'scale(1.05)';
+                nodes[index].style.zIndex = '30';
+                
+                // Pulse the orb
+                const orb = orbs[index];
+                if (orb) {
+                    gsap.to(orb, {
+                        scale: 1.5,
+                        duration: 0.5,
+                        yoyo: true,
+                        repeat: 1,
+                        ease: "power2.inOut"
+                    });
+                }
+                
+                // Color pulse effect
+                const color = timelineData[index].color;
+                document.documentElement.style.setProperty('--pulse-color', color);
+                
+                // Create particle burst effect
+                createParticleBurst(color);
+            }
+        }
+
+        function createParticleBurst(color) {
+            const burstCount = 50;
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = '50%';
+            container.style.left = '50%';
+            container.style.transform = 'translate(-50%, -50%)';
+            container.style.zIndex = '5';
+            container.style.pointerEvents = 'none';
+            
+            for (let i = 0; i < burstCount; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = '4px';
+                particle.style.height = '4px';
+                particle.style.backgroundColor = color;
+                particle.style.borderRadius = '50%';
+                particle.style.boxShadow = `0 0 10px ${color}`;
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 200;
+                const duration = 0.5 + Math.random() * 1;
+                
+                gsap.fromTo(particle,
+                    {
+                        x: 0,
+                        y: 0,
+                        opacity: 1,
+                        scale: 1
+                    },
+                    {
+                        x: Math.cos(angle) * distance,
+                        y: Math.sin(angle) * distance,
+                        opacity: 0,
+                        scale: 0,
+                        duration: duration,
+                        ease: "power2.out",
+                        onComplete: () => particle.remove()
+                    }
+                );
+                
+                container.appendChild(particle);
+            }
+            
+            document.body.appendChild(container);
+            setTimeout(() => container.remove(), 2000);
+        }
+
+        function startAutoJourney() {
+            if (isAutoJourney) {
+                clearInterval(autoJourneyInterval);
+                isAutoJourney = false;
+                document.getElementById('auto-btn').innerHTML = '<i class="fas fa-play"></i> Auto Journey';
+                return;
+            }
+            
+            isAutoJourney = true;
+            document.getElementById('auto-btn').innerHTML = '<i class="fas fa-pause"></i> Pause Journey';
+            
+            let eraIndex = 0;
+            goToEra(eraIndex);
+            
+            autoJourneyInterval = setInterval(() => {
+                eraIndex = (eraIndex + 1) % timelineData.length;
+                goToEra(eraIndex);
+            }, 4000);
+        }
+
+        function toggleFullImmersion() {
+            const immersion = document.getElementById('fullscreen-immersion');
+            const text = document.getElementById('immersion-text');
+            const era = timelineData[currentEra];
+            
+            text.textContent = `ENTERING: ${era.version}`;
+            immersion.classList.toggle('active');
+            
+            if (immersion.classList.contains('active')) {
+                // Intensify effects
+                document.querySelector('.timeline-line-3d').style.boxShadow = 
+                    '0 0 100px #0ff, 0 0 200px #0ff, 0 0 300px #0ff';
+                
+                // Create immersive particle storm
+                createImmersiveStorm();
+                
+                // Auto exit after 8 seconds
+                setTimeout(() => {
+                    immersion.classList.remove('active');
+                    document.querySelector('.timeline-line-3d').style.boxShadow = 
+                        '0 0 40px #0ff, 0 0 80px #0ff, 0 0 120px #0ff';
+                }, 8000);
+            }
+        }
+
+        function createImmersiveStorm() {
+            const stormParticles = 200;
+            const stormContainer = document.createElement('div');
+            stormContainer.style.position = 'fixed';
+            stormContainer.style.top = '0';
+            stormContainer.style.left = '0';
+            stormContainer.style.width = '100%';
+            stormContainer.style.height = '100%';
+            stormContainer.style.zIndex = '999';
+            stormContainer.style.pointerEvents = 'none';
+            
+            for (let i = 0; i < stormParticles; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                particle.style.width = Math.random() * 6 + 2 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.backgroundColor = i % 3 === 0 ? '#0ff' : i % 3 === 1 ? '#f0f' : '#ff0';
+                particle.style.borderRadius = '50%';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.boxShadow = `0 0 20px ${particle.style.backgroundColor}`;
+                
+                const duration = 2 + Math.random() * 3;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 100 + Math.random() * 300;
+                
+                gsap.fromTo(particle,
+                    {
+                        opacity: 1,
+                        x: 0,
+                        y: 0
+                    },
+                    {
+                        x: Math.cos(angle) * distance,
+                        y: Math.sin(angle) * distance,
+                        opacity: 0,
+                        duration: duration,
+                        ease: "power2.out",
+                        onComplete: () => particle.remove()
+                    }
+                );
+                
+                stormContainer.appendChild(particle);
+            }
+            
+            document.body.appendChild(stormContainer);
+            setTimeout(() => stormContainer.remove(), 5000);
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeJS();
+            initTimeline();
+            
+            // Button event listeners
+            document.getElementById('prev-btn').addEventListener('click', () => {
+                goToEra(currentEra - 1);
+            });
+            
+            document.getElementById('next-btn').addEventListener('click', () => {
+                goToEra(currentEra + 1);
+            });
+            
+            document.getElementById('auto-btn').addEventListener('click', startAutoJourney);
+            
+            document.getElementById('immerse-btn').addEventListener('click', toggleFullImmersion);
+            
+            // Sound controls
+            const bgMusic = document.getElementById('bg-music');
+            document.getElementById('music-btn').addEventListener('click', () => {
+                isMusicPlaying = !isMusicPlaying;
+                if (isMusicPlaying) {
+                    bgMusic.play();
+                    document.getElementById('music-btn').innerHTML = '<i class="fas fa-pause"></i>';
+                } else {
+                    bgMusic.pause();
+                    document.getElementById('music-btn').innerHTML = '<i class="fas fa-music"></i>';
+                }
+            });
+            
+            document.getElementById('sfx-btn').addEventListener('click', () => {
+                isSFXEnabled = !isSFXEnabled;
+                document.getElementById('sfx-btn').innerHTML = isSFXEnabled ? 
+                    '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
+            });
+            
+            // Info panel toggle
+            document.getElementById('info-toggle').addEventListener('click', () => {
+                isInfoPanelActive = !isInfoPanelActive;
+                document.getElementById('info-panel').classList.toggle('active', isInfoPanelActive);
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                switch(e.key) {
+                    case 'ArrowLeft':
+                        goToEra(currentEra - 1);
+                        break;
+                    case 'ArrowRight':
+                        goToEra(currentEra + 1);
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        startAutoJourney();
+                        break;
+                    case 'i':
+                    case 'I':
+                        isInfoPanelActive = !isInfoPanelActive;
+                        document.getElementById('info-panel').classList.toggle('active', isInfoPanelActive);
+                        break;
+                    case 'f':
+                    case 'F':
+                        toggleFullImmersion();
+                        break;
+                }
+            });
+            
+            // Start with subtle background music
+            setTimeout(() => {
+                bgMusic.volume = 0.3;
+                bgMusic.play();
+                isMusicPlaying = true;
+                document.getElementById('music-btn').innerHTML = '<i class="fas fa-pause"></i>';
+            }, 1000);
+        });
+    </script>
 </body>
 </html>
