@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSX Sites - Choose Your Experience</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .header {
+            margin-bottom: 60px;
+        }
+        
+        .header h1 {
+            font-size: 3.5rem;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+        
+        .header p {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .sites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .site-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 20px;
+            padding: 40px 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .site-card:hover {
+            transform: translateY(-10px);
+            border-color: #667eea;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+        
+        .site-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .site-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .site-card h2 {
+            color: #e2e8f0;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .site-card p {
+            color: #94a3b8;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        
+        .site-features {
+            list-style: none;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        
+        .site-features li {
+            color: #cbd5e1;
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .site-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.2);
+            border: 1px solid #475569;
+            color: #e2e8f0;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.3);
+            border-color: #667eea;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(102, 126, 234, 0.2);
+            color: #c7d2fe;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            border: 1px solid rgba(102, 126, 234, 0.4);
+        }
+        
+        .footer {
+            color: #64748b;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .sites-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 HSX Runtime Experience</h1>
+            <p>Choose between two advanced HSX-powered websites. Each offers unique features and capabilities.</p>
+        </div>
+        
+        <div class="sites-grid">
+            <!-- Animation Lab Site -->
+            <div class="site-card" onclick="window.location.href='/animation'">
+                <div class="site-icon">🎨</div>
+                <div class="badge">Primary Site</div>
+                <h2>HSX Animation Lab</h2>
+                <p>Advanced animation studio with real-time customizable effects, particle systems, and immersive visuals.</p>
+                
+                <ul class="site-features">
+                    <li>6+ animation effects (Particles, Neon, Fluid, etc.)</li>
+                    <li>Real-time parameter controls</li>
+                    <li>Live FPS & performance metrics</li>
+                    <li>Screenshot capture & fullscreen mode</li>
+                    <li>Interactive control panel</li>
+                    <li>Background particle system</li>
+                </ul>
+                
+                <button class="btn">Enter Animation Lab →</button>
+            </div>
+            
+            <!-- Example Site -->
+            <div class="site-card" onclick="window.location.href='/example'">
+                <div class="site-icon">🧪</div>
+                <div class="badge">Example Site</div>
+                <h2>HSX Example Showcase</h2>
+                <p>Demonstration of HSX runtime capabilities with various components, modules, and experimental features.</p>
+                
+                <ul class="site-features">
+                    <li>HSX Runtime demonstrations</li>
+                    <li>Component showcase</li>
+                    <li>Module system examples</li>
+                    <li>Custom HSX syntax</li>
+                    <li>File attachment system</li>
+                    <li>Python-JS integration</li>
+                </ul>
+                
+                <button class="btn btn-secondary">View Examples →</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Both sites powered by <strong>HSX Runtime v0.72+</strong> | © 2026 William Isaiah Jones</p>
+            <p style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">
+                <a href="https://github.com/your-username/hsx-runtime" style="color: #94a3b8; text-decoration: none;">GitHub</a> • 
+                <a href="/animation/docs/hsx-runtime-full.js" style="color: #94a3b8; text-decoration: none;">Runtime Source</a> • 
+                <a href="mailto:contact@example.com" style="color: #94a3b8; text-decoration: none;">Contact</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Add animation on load
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.site-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === '1' || e.key === 'a') {
+                    window.location.href = '/animation';
+                } else if (e.key === '2' || e.key === 'e') {
+                    window.location.href = '/example';
+                } else if (e.key === 'Escape') {
+                    // Add any escape functionality
+                }
+            });
+            
+            // Welcome message
+            console.log('🚀 HSX Site Selector Loaded');
+            console.log('Press 1 or A for Animation Lab');
+            console.log('Press 2 or E for Example Site');
+        });
+    </script>
+</body>
+</html>
