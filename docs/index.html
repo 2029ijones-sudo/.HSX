@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🌀 HSX/KSX Evolution - Ultimate Immersive Experience</title>
     
-    <!-- External Libraries -->
+    <!-- EXTERNAL LIBRARIES - USING WORKING VERSIONS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.0/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/EffectComposer.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/RenderPass.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/ShaderPass.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/CopyShader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/GlitchPass.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/BloomPass.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/experimental/UnrealBloomPass.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
@@ -46,11 +45,6 @@
         .content-overlay {
             position: relative;
             z-index: 10;
-            pointer-events: none;
-        }
-
-        .content-overlay > * {
-            pointer-events: auto;
         }
 
         /* Massive Header */
@@ -630,7 +624,7 @@
     </audio>
     
     <audio id="transition-sound">
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-loop-493.mp3" type="audio/mpeg">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-transition-915.mp3" type="audio/mpeg">
     </audio>
     
     <script>
@@ -712,37 +706,57 @@
 
         // Initialize Three.js Scene
         function initThreeJS() {
-            // Scene
-            scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0x000000, 1, 1000);
+            console.log("Initializing Three.js...");
+            
+            try {
+                // Scene
+                scene = new THREE.Scene();
+                scene.fog = new THREE.Fog(0x000000, 1, 1000);
 
-            // Camera
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-            camera.position.z = 50;
+                // Camera
+                camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+                camera.position.z = 50;
 
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            document.getElementById('three-container').appendChild(renderer.domElement);
+                // Renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setClearColor(0x000000, 0);
+                document.getElementById('three-container').appendChild(renderer.domElement);
 
-            // Create particle system
-            createParticleSystem();
-            
-            // Create floating orbs
-            createFloatingOrbs();
-            
-            // Create nebula effect
-            createNebula();
-            
-            // Post-processing
-            initPostProcessing();
-            
-            // Handle window resize
-            window.addEventListener('resize', onWindowResize);
-            
-            // Start animation loop
-            animate();
+                // Create particle system
+                createParticleSystem();
+                
+                // Create floating orbs
+                createFloatingOrbs();
+                
+                // Create nebula effect
+                createNebula();
+                
+                // Post-processing
+                initPostProcessing();
+                
+                // Handle window resize
+                window.addEventListener('resize', onWindowResize);
+                
+                // Start animation loop
+                animate();
+                
+                console.log("Three.js initialized successfully!");
+            } catch (error) {
+                console.error("Error initializing Three.js:", error);
+                // Create fallback background if Three.js fails
+                createFallbackBackground();
+            }
+        }
+
+        function createFallbackBackground() {
+            const container = document.getElementById('three-container');
+            container.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #001122 0%, #000000 100%); z-index: 1;">
+                    <div style="position: absolute; width: 100%; height: 100%; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.1) 2px, rgba(0, 255, 255, 0.1) 4px);"></div>
+                </div>
+            `;
         }
 
         function createParticleSystem() {
@@ -781,8 +795,9 @@
             const orbGeometry = new THREE.SphereGeometry(2, 32, 32);
             
             for (let i = 0; i < orbCount; i++) {
+                const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x00ff00, 0xff0000, 0x0000ff];
                 const orbMaterial = new THREE.MeshBasicMaterial({
-                    color: new THREE.Color(Math.random() * 0xffffff),
+                    color: colors[i % colors.length],
                     transparent: true,
                     opacity: 0.6,
                     wireframe: true
@@ -812,65 +827,42 @@
         }
 
         function createNebula() {
-            const nebulaGeometry = new THREE.SphereGeometry(200, 32, 32);
-            const nebulaMaterial = new THREE.ShaderMaterial({
-                uniforms: {
-                    time: { value: 0.0 }
-                },
-                vertexShader: `
-                    varying vec3 vPosition;
-                    void main() {
-                        vPosition = position;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform float time;
-                    varying vec3 vPosition;
-                    void main() {
-                        float intensity = sin(vPosition.x * 0.1 + time) * 0.5 + 0.5;
-                        intensity *= sin(vPosition.y * 0.05 + time * 0.5) * 0.3 + 0.7;
-                        intensity *= sin(vPosition.z * 0.08 + time * 0.3) * 0.4 + 0.6;
-                        
-                        vec3 color1 = vec3(0.0, 0.5, 1.0);
-                        vec3 color2 = vec3(1.0, 0.0, 0.5);
-                        vec3 color3 = vec3(0.5, 1.0, 0.0);
-                        
-                        vec3 finalColor = mix(color1, color2, intensity);
-                        finalColor = mix(finalColor, color3, sin(time * 0.2) * 0.5 + 0.5);
-                        
-                        gl_FragColor = vec4(finalColor, 0.05 * intensity);
-                    }
-                `,
-                transparent: true,
+            // Simple gradient background instead of shader for compatibility
+            const geometry = new THREE.BoxGeometry(2000, 2000, 2000);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x000011,
                 side: THREE.BackSide
             });
-            
-            const nebula = new THREE.Mesh(nebulaGeometry, nebulaMaterial);
-            scene.add(nebula);
-            particles.push(nebulaMaterial);
+            const background = new THREE.Mesh(geometry, material);
+            scene.add(background);
         }
 
         function initPostProcessing() {
-            composer = new THREE.EffectComposer(renderer);
-            composer.addPass(new THREE.RenderPass(scene, camera));
+            try {
+                composer = new THREE.EffectComposer(renderer);
+                composer.addPass(new THREE.RenderPass(scene, camera));
 
-            // Add bloom effect
-            const bloomPass = new THREE.BloomPass(1.5, 25, 5, 256);
-            composer.addPass(bloomPass);
-
-            // Add glitch effect (subtle)
-            const glitchPass = new THREE.GlitchPass();
-            glitchPass.goWild = false;
-            glitchPass.enabled = false;
-            composer.addPass(glitchPass);
+                // Try to add bloom effect if available
+                if (THREE.UnrealBloomPass) {
+                    const bloomPass = new THREE.UnrealBloomPass(
+                        new THREE.Vector2(window.innerWidth, window.innerHeight),
+                        1.5, 0.4, 0.85
+                    );
+                    composer.addPass(bloomPass);
+                }
+            } catch (error) {
+                console.log("Post-processing not available, using regular renderer");
+                composer = null;
+            }
         }
 
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
+            if (composer) {
+                composer.setSize(window.innerWidth, window.innerHeight);
+            }
         }
 
         function animate() {
@@ -888,27 +880,22 @@
                     particle.position.y += Math.sin(Date.now() * 0.001 + index) * 0.5;
                 }
                 
-                // Rotate nebula
-                if (particle.isMesh && particle.geometry.type === 'SphereGeometry' && particle.material.uniforms) {
-                    particle.rotation.y += 0.0005;
-                    particle.rotation.x += 0.0003;
-                    if (particle.material.uniforms.time) {
-                        particle.material.uniforms.time.value = Date.now() * 0.001;
-                    }
+                // Rotate particle system
+                if (particle.rotation) {
+                    particle.rotation.y += 0.001;
+                    particle.rotation.x += 0.0005;
                 }
             });
-
-            // Rotate particle system
-            if (particles[0]) {
-                particles[0].rotation.y += 0.001;
-                particles[0].rotation.x += 0.0005;
-            }
 
             // Update camera based on scroll
             updateCameraPosition();
             
             // Render
-            composer.render();
+            if (composer) {
+                composer.render();
+            } else {
+                renderer.render(scene, camera);
+            }
         }
 
         function updateCameraPosition() {
@@ -927,7 +914,7 @@
             const progressIndicator = document.getElementById('progress-indicator');
             
             // Calculate positions
-            const containerHeight = container.offsetHeight;
+            const containerHeight = 2000; // Fixed height for positioning
             const nodeSpacing = containerHeight / (timelineData.length + 1);
             
             timelineData.forEach((era, index) => {
@@ -956,7 +943,10 @@
                 dot.className = 'progress-dot';
                 if (index === 0) dot.classList.add('active');
                 dot.dataset.era = index;
-                dot.addEventListener('click', () => goToEra(index));
+                dot.addEventListener('click', () => {
+                    console.log("Progress dot clicked:", index);
+                    goToEra(index);
+                });
                 progressIndicator.appendChild(dot);
                 
                 // Add hover effect
@@ -968,45 +958,52 @@
             });
             
             // Initialize GSAP animations
-            gsap.registerPlugin(ScrollTrigger);
-            
-            // Create scroll-triggered animations for timeline nodes
-            document.querySelectorAll('.timeline-node').forEach((node, index) => {
-                gsap.fromTo(node,
-                    {
-                        opacity: 0,
-                        y: 100,
-                        rotationY: index % 2 === 0 ? -30 : 30
-                    },
-                    {
-                        opacity: 1,
-                        y: 0,
-                        rotationY: 0,
-                        duration: 1.5,
-                        ease: "power3.out",
-                        scrollTrigger: {
-                            trigger: node,
-                            start: "top 80%",
-                            end: "top 30%",
-                            toggleActions: "play none none reverse"
+            if (typeof gsap !== 'undefined') {
+                gsap.registerPlugin(ScrollTrigger);
+                
+                // Create scroll-triggered animations for timeline nodes
+                document.querySelectorAll('.timeline-node').forEach((node, index) => {
+                    gsap.fromTo(node,
+                        {
+                            opacity: 0,
+                            y: 100,
+                            rotationY: index % 2 === 0 ? -30 : 30
+                        },
+                        {
+                            opacity: 1,
+                            y: 0,
+                            rotationY: 0,
+                            duration: 1.5,
+                            ease: "power3.out",
+                            scrollTrigger: {
+                                trigger: node,
+                                start: "top 80%",
+                                end: "top 30%",
+                                toggleActions: "play none none reverse"
+                            }
                         }
-                    }
-                );
-            });
-            
-            // Parallax effect for timeline line
-            gsap.to('.timeline-line-3d', {
-                scrollTrigger: {
-                    scrub: 0.5
-                },
-                height: '100%',
-                ease: "none"
-            });
+                    );
+                });
+                
+                // Parallax effect for timeline line
+                gsap.to('.timeline-line-3d', {
+                    scrollTrigger: {
+                        scrub: 0.5
+                    },
+                    height: '100%',
+                    ease: "none"
+                });
+            }
         }
 
-        // Timeline Navigation
+        // Timeline Navigation - THIS IS THE MAIN FUNCTION THAT MUST WORK
         function goToEra(index) {
-            if (index < 0 || index >= timelineData.length) return;
+            console.log("Going to era:", index);
+            
+            if (index < 0 || index >= timelineData.length) {
+                console.log("Invalid era index");
+                return;
+            }
             
             currentEra = index;
             
@@ -1018,17 +1015,39 @@
             // Scroll to era
             const nodes = document.querySelectorAll('.timeline-node');
             if (nodes[index]) {
-                nodes[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                console.log("Scrolling to node:", index);
+                nodes[index].scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'center'
+                });
+                
+                // Force scroll if needed
+                setTimeout(() => {
+                    const nodeRect = nodes[index].getBoundingClientRect();
+                    const scrollPosition = window.pageYOffset + nodeRect.top - (window.innerHeight / 2) + (nodeRect.height / 2);
+                    window.scrollTo({
+                        top: scrollPosition,
+                        behavior: 'smooth'
+                    });
+                }, 100);
             }
             
             // Play transition sound
             if (isSFXEnabled) {
-                document.getElementById('transition-sound').currentTime = 0;
-                document.getElementById('transition-sound').play();
+                try {
+                    const sound = document.getElementById('transition-sound');
+                    sound.currentTime = 0;
+                    sound.play().catch(e => console.log("Audio play failed:", e));
+                } catch (error) {
+                    console.log("Sound error:", error);
+                }
             }
             
             // Trigger visual effect
             highlightEra(index);
+            
+            console.log("Successfully navigated to era:", index);
         }
 
         function highlightEra(index) {
@@ -1048,7 +1067,7 @@
                 
                 // Pulse the orb
                 const orb = orbs[index];
-                if (orb) {
+                if (orb && typeof gsap !== 'undefined') {
                     gsap.to(orb, {
                         scale: 1.5,
                         duration: 0.5,
@@ -1058,17 +1077,13 @@
                     });
                 }
                 
-                // Color pulse effect
-                const color = timelineData[index].color;
-                document.documentElement.style.setProperty('--pulse-color', color);
-                
                 // Create particle burst effect
-                createParticleBurst(color);
+                createParticleBurst(timelineData[index].color);
             }
         }
 
         function createParticleBurst(color) {
-            const burstCount = 50;
+            const burstCount = 30;
             const container = document.createElement('div');
             container.style.position = 'fixed';
             container.style.top = '50%';
@@ -1090,52 +1105,71 @@
                 const distance = 50 + Math.random() * 200;
                 const duration = 0.5 + Math.random() * 1;
                 
-                gsap.fromTo(particle,
-                    {
-                        x: 0,
-                        y: 0,
-                        opacity: 1,
-                        scale: 1
-                    },
-                    {
-                        x: Math.cos(angle) * distance,
-                        y: Math.sin(angle) * distance,
-                        opacity: 0,
-                        scale: 0,
-                        duration: duration,
-                        ease: "power2.out",
-                        onComplete: () => particle.remove()
-                    }
-                );
+                if (typeof gsap !== 'undefined') {
+                    gsap.fromTo(particle,
+                        {
+                            x: 0,
+                            y: 0,
+                            opacity: 1,
+                            scale: 1
+                        },
+                        {
+                            x: Math.cos(angle) * distance,
+                            y: Math.sin(angle) * distance,
+                            opacity: 0,
+                            scale: 0,
+                            duration: duration,
+                            ease: "power2.out",
+                            onComplete: () => particle.remove()
+                        }
+                    );
+                } else {
+                    // Fallback animation
+                    particle.style.transition = `all ${duration}s ease-out`;
+                    setTimeout(() => {
+                        particle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px)`;
+                        particle.style.opacity = '0';
+                        setTimeout(() => particle.remove(), duration * 1000);
+                    }, 10);
+                }
                 
                 container.appendChild(particle);
             }
             
             document.body.appendChild(container);
-            setTimeout(() => container.remove(), 2000);
+            setTimeout(() => {
+                if (container.parentNode) {
+                    container.parentNode.removeChild(container);
+                }
+            }, 2000);
         }
 
         function startAutoJourney() {
+            console.log("Auto journey button clicked");
+            
             if (isAutoJourney) {
                 clearInterval(autoJourneyInterval);
                 isAutoJourney = false;
                 document.getElementById('auto-btn').innerHTML = '<i class="fas fa-play"></i> Auto Journey';
+                document.getElementById('auto-btn').style.background = 'linear-gradient(145deg, #0a1a2a, #001020)';
                 return;
             }
             
             isAutoJourney = true;
             document.getElementById('auto-btn').innerHTML = '<i class="fas fa-pause"></i> Pause Journey';
+            document.getElementById('auto-btn').style.background = 'linear-gradient(145deg, #00aaff, #0088cc)';
             
-            let eraIndex = 0;
-            goToEra(eraIndex);
+            goToEra(currentEra);
             
             autoJourneyInterval = setInterval(() => {
-                eraIndex = (eraIndex + 1) % timelineData.length;
-                goToEra(eraIndex);
-            }, 4000);
+                currentEra = (currentEra + 1) % timelineData.length;
+                goToEra(currentEra);
+            }, 3000);
         }
 
         function toggleFullImmersion() {
+            console.log("Full immersion button clicked");
+            
             const immersion = document.getElementById('fullscreen-immersion');
             const text = document.getElementById('immersion-text');
             const era = timelineData[currentEra];
@@ -1148,6 +1182,10 @@
                 document.querySelector('.timeline-line-3d').style.boxShadow = 
                     '0 0 100px #0ff, 0 0 200px #0ff, 0 0 300px #0ff';
                 
+                // Disable other controls
+                document.querySelector('.control-panel').style.opacity = '0.5';
+                document.querySelector('.control-panel').style.pointerEvents = 'none';
+                
                 // Create immersive particle storm
                 createImmersiveStorm();
                 
@@ -1156,12 +1194,14 @@
                     immersion.classList.remove('active');
                     document.querySelector('.timeline-line-3d').style.boxShadow = 
                         '0 0 40px #0ff, 0 0 80px #0ff, 0 0 120px #0ff';
+                    document.querySelector('.control-panel').style.opacity = '1';
+                    document.querySelector('.control-panel').style.pointerEvents = 'auto';
                 }, 8000);
             }
         }
 
         function createImmersiveStorm() {
-            const stormParticles = 200;
+            const stormParticles = 100;
             const stormContainer = document.createElement('div');
             stormContainer.style.position = 'fixed';
             stormContainer.style.top = '0';
@@ -1176,7 +1216,8 @@
                 particle.style.position = 'absolute';
                 particle.style.width = Math.random() * 6 + 2 + 'px';
                 particle.style.height = particle.style.width;
-                particle.style.backgroundColor = i % 3 === 0 ? '#0ff' : i % 3 === 1 ? '#f0f' : '#ff0';
+                const colors = ['#0ff', '#f0f', '#ff0'];
+                particle.style.backgroundColor = colors[i % 3];
                 particle.style.borderRadius = '50%';
                 particle.style.left = Math.random() * 100 + '%';
                 particle.style.top = Math.random() * 100 + '%';
@@ -1186,80 +1227,156 @@
                 const angle = Math.random() * Math.PI * 2;
                 const distance = 100 + Math.random() * 300;
                 
-                gsap.fromTo(particle,
-                    {
-                        opacity: 1,
-                        x: 0,
-                        y: 0
-                    },
-                    {
-                        x: Math.cos(angle) * distance,
-                        y: Math.sin(angle) * distance,
-                        opacity: 0,
-                        duration: duration,
-                        ease: "power2.out",
-                        onComplete: () => particle.remove()
-                    }
-                );
+                if (typeof gsap !== 'undefined') {
+                    gsap.fromTo(particle,
+                        {
+                            opacity: 1,
+                            x: 0,
+                            y: 0
+                        },
+                        {
+                            x: Math.cos(angle) * distance,
+                            y: Math.sin(angle) * distance,
+                            opacity: 0,
+                            duration: duration,
+                            ease: "power2.out",
+                            onComplete: () => particle.remove()
+                        }
+                    );
+                }
                 
                 stormContainer.appendChild(particle);
             }
             
             document.body.appendChild(stormContainer);
-            setTimeout(() => stormContainer.remove(), 5000);
+            setTimeout(() => {
+                if (stormContainer.parentNode) {
+                    stormContainer.parentNode.removeChild(stormContainer);
+                }
+            }, 5000);
         }
 
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', () => {
+        // Initialize everything when page loads
+        window.addEventListener('load', () => {
+            console.log("Page loaded, initializing...");
+            
+            // Initialize Three.js
             initThreeJS();
+            
+            // Initialize Timeline
             initTimeline();
             
-            // Button event listeners
-            document.getElementById('prev-btn').addEventListener('click', () => {
-                goToEra(currentEra - 1);
-            });
+            // Set up button event listeners
+            setupEventListeners();
             
-            document.getElementById('next-btn').addEventListener('click', () => {
-                goToEra(currentEra + 1);
-            });
+            // Initialize first era
+            setTimeout(() => goToEra(0), 500);
             
-            document.getElementById('auto-btn').addEventListener('click', startAutoJourney);
+            console.log("Initialization complete!");
+        });
+
+        function setupEventListeners() {
+            console.log("Setting up event listeners...");
             
-            document.getElementById('immerse-btn').addEventListener('click', toggleFullImmersion);
+            // Previous button
+            const prevBtn = document.getElementById('prev-btn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    console.log("Previous button clicked");
+                    const newEra = currentEra - 1;
+                    if (newEra >= 0) {
+                        goToEra(newEra);
+                    } else {
+                        goToEra(timelineData.length - 1); // Wrap to end
+                    }
+                });
+            }
             
-            // Sound controls
-            const bgMusic = document.getElementById('bg-music');
-            document.getElementById('music-btn').addEventListener('click', () => {
-                isMusicPlaying = !isMusicPlaying;
-                if (isMusicPlaying) {
-                    bgMusic.play();
-                    document.getElementById('music-btn').innerHTML = '<i class="fas fa-pause"></i>';
-                } else {
-                    bgMusic.pause();
-                    document.getElementById('music-btn').innerHTML = '<i class="fas fa-music"></i>';
-                }
-            });
+            // Next button
+            const nextBtn = document.getElementById('next-btn');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    console.log("Next button clicked");
+                    const newEra = (currentEra + 1) % timelineData.length;
+                    goToEra(newEra);
+                });
+            }
             
-            document.getElementById('sfx-btn').addEventListener('click', () => {
-                isSFXEnabled = !isSFXEnabled;
-                document.getElementById('sfx-btn').innerHTML = isSFXEnabled ? 
-                    '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
-            });
+            // Auto journey button
+            const autoBtn = document.getElementById('auto-btn');
+            if (autoBtn) {
+                autoBtn.addEventListener('click', startAutoJourney);
+            }
+            
+            // Immerse button
+            const immerseBtn = document.getElementById('immerse-btn');
+            if (immerseBtn) {
+                immerseBtn.addEventListener('click', toggleFullImmersion);
+            }
+            
+            // Music button
+            const musicBtn = document.getElementById('music-btn');
+            if (musicBtn) {
+                musicBtn.addEventListener('click', () => {
+                    console.log("Music button clicked");
+                    const bgMusic = document.getElementById('bg-music');
+                    try {
+                        if (isMusicPlaying) {
+                            bgMusic.pause();
+                            musicBtn.innerHTML = '<i class="fas fa-music"></i>';
+                            musicBtn.style.background = 'rgba(10, 20, 40, 0.9)';
+                        } else {
+                            bgMusic.volume = 0.3;
+                            bgMusic.play().catch(e => {
+                                console.log("Music play failed:", e);
+                                // User interaction might be required
+                                musicBtn.innerHTML = '<i class="fas fa-play"></i>';
+                            });
+                            musicBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                            musicBtn.style.background = 'rgba(0, 100, 255, 0.5)';
+                        }
+                        isMusicPlaying = !isMusicPlaying;
+                    } catch (error) {
+                        console.log("Music error:", error);
+                    }
+                });
+            }
+            
+            // SFX button
+            const sfxBtn = document.getElementById('sfx-btn');
+            if (sfxBtn) {
+                sfxBtn.addEventListener('click', () => {
+                    console.log("SFX button clicked");
+                    isSFXEnabled = !isSFXEnabled;
+                    sfxBtn.innerHTML = isSFXEnabled ? 
+                        '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute"></i>';
+                    sfxBtn.style.background = isSFXEnabled ? 
+                        'rgba(0, 100, 255, 0.5)' : 'rgba(255, 50, 50, 0.5)';
+                });
+            }
             
             // Info panel toggle
-            document.getElementById('info-toggle').addEventListener('click', () => {
-                isInfoPanelActive = !isInfoPanelActive;
-                document.getElementById('info-panel').classList.toggle('active', isInfoPanelActive);
-            });
+            const infoToggle = document.getElementById('info-toggle');
+            if (infoToggle) {
+                infoToggle.addEventListener('click', () => {
+                    console.log("Info toggle clicked");
+                    isInfoPanelActive = !isInfoPanelActive;
+                    document.getElementById('info-panel').classList.toggle('active', isInfoPanelActive);
+                    infoToggle.innerHTML = isInfoPanelActive ? 
+                        '<i class="fas fa-times"></i>' : '<i class="fas fa-info"></i>';
+                });
+            }
             
             // Keyboard navigation
             document.addEventListener('keydown', (e) => {
                 switch(e.key) {
                     case 'ArrowLeft':
-                        goToEra(currentEra - 1);
+                        e.preventDefault();
+                        goToEra(currentEra - 1 >= 0 ? currentEra - 1 : timelineData.length - 1);
                         break;
                     case 'ArrowRight':
-                        goToEra(currentEra + 1);
+                        e.preventDefault();
+                        goToEra((currentEra + 1) % timelineData.length);
                         break;
                     case ' ':
                         e.preventDefault();
@@ -1267,24 +1384,33 @@
                         break;
                     case 'i':
                     case 'I':
+                        e.preventDefault();
                         isInfoPanelActive = !isInfoPanelActive;
                         document.getElementById('info-panel').classList.toggle('active', isInfoPanelActive);
                         break;
                     case 'f':
                     case 'F':
+                        e.preventDefault();
                         toggleFullImmersion();
                         break;
                 }
             });
             
-            // Start with subtle background music
-            setTimeout(() => {
-                bgMusic.volume = 0.3;
-                bgMusic.play();
-                isMusicPlaying = true;
-                document.getElementById('music-btn').innerHTML = '<i class="fas fa-pause"></i>';
-            }, 1000);
-        });
+            // Add click sound to all buttons for feedback
+            document.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (isSFXEnabled) {
+                        // Add visual feedback
+                        this.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            this.style.transform = '';
+                        }, 100);
+                    }
+                });
+            });
+            
+            console.log("Event listeners set up successfully!");
+        }
     </script>
 </body>
 </html>
