@@ -1,0 +1,699 @@
+// Advanced HSX Animation Framework
+hsx security on
+
+// Load core modules
+hsx modules: Load
+
+// Create animation engine module
+hsx modules: create > animationEngine
+
+// Define components
+hsx define component Header
+<h1 style="font-family: 'Inter', sans-serif; font-size: 4em; font-weight: 800; 
+           background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+           -webkit-background-clip: text;
+           -webkit-text-fill-color: transparent;
+           margin: 0;
+           padding: 20px 0;">
+  ✨ HSX Animation Lab
+</h1>
+<p style="color: #94a3b8; font-size: 1.2em; margin-top: 10px;">
+  Advanced immersive effects & customizable animations
+</p>
+hsx end
+
+hsx define component ControlPanel
+<div id="control-panel" style="background: rgba(15, 23, 42, 0.8); 
+                              backdrop-filter: blur(10px);
+                              border: 1px solid rgba(148, 163, 184, 0.2);
+                              border-radius: 16px;
+                              padding: 30px;
+                              margin: 30px 0;
+                              box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
+  <h2 style="color: #e2e8f0; margin-top: 0;">🎛️ Animation Controls</h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+              gap: 25px; margin-top: 25px;">
+    
+    <div class="control-group">
+      <label style="color: #cbd5e1; display: block; margin-bottom: 10px;">
+        🎭 Effect Type
+      </label>
+      <select id="effect-type" style="width: 100%; padding: 12px; border-radius: 8px; 
+                                      background: rgba(30, 41, 59, 0.8);
+                                      border: 1px solid #475569;
+                                      color: #e2e8f0; font-size: 16px;">
+        <option value="particle">Particle Wave</option>
+        <option value="neon">Neon Grid</option>
+        <option value="fluid">Fluid Simulation</option>
+        <option value="hologram">Hologram Matrix</option>
+        <option value="galaxy">Galaxy Swirl</option>
+        <option value="circuit">Circuit Board</option>
+      </select>
+    </div>
+    
+    <div class="control-group">
+      <label style="color: #cbd5e1; display: block; margin-bottom: 10px;">
+        🌈 Color Scheme
+      </label>
+      <input type="color" id="primary-color" value="#667eea" style="width: 100%; height: 45px; 
+                                                                    border-radius: 8px; border: none;">
+    </div>
+    
+    <div class="control-group">
+      <label style="color: #cbd5e1; display: block; margin-bottom: 10px;">
+        ⚡ Intensity: <span id="intensity-value">50</span>%
+      </label>
+      <input type="range" id="intensity" min="1" max="100" value="50" 
+             style="width: 100%; height: 8px; border-radius: 4px; background: #475569;">
+    </div>
+    
+    <div class="control-group">
+      <label style="color: #cbd5e1; display: block; margin-bottom: 10px;">
+        🌀 Speed: <span id="speed-value">5</span>
+      </label>
+      <input type="range" id="speed" min="1" max="10" value="5" 
+             style="width: 100%; height: 8px; border-radius: 4px; background: #475569;">
+    </div>
+    
+    <div class="control-group">
+      <label style="color: #cbd5e1; display: block; margin-bottom: 10px;">
+        🔲 Particle Count
+      </label>
+      <input type="range" id="particle-count" min="10" max="500" value="150" 
+             style="width: 100%; height: 8px; border-radius: 4px; background: #475569;">
+    </div>
+    
+    <div class="control-group">
+      <label style="color: #cbd5e1; display: block; margin-bottom: 10px;">
+        🌌 Background Depth
+      </label>
+      <input type="range" id="depth" min="0" max="100" value="30" 
+             style="width: 100%; height: 8px; border-radius: 4px; background: #475569;">
+    </div>
+    
+  </div>
+  
+  <div style="display: flex; gap: 15px; margin-top: 30px;">
+    <button id="play-btn" style="padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                 border: none; border-radius: 10px; color: white; font-size: 16px;
+                                 font-weight: 600; cursor: pointer; flex: 1;">
+      ▶️ Start Animation
+    </button>
+    
+    <button id="random-btn" style="padding: 15px 30px; background: rgba(148, 163, 184, 0.2);
+                                   border: 1px solid #475569; border-radius: 10px; 
+                                   color: #e2e8f0; font-size: 16px;
+                                   font-weight: 600; cursor: pointer; flex: 1;">
+      🎲 Random Preset
+    </button>
+    
+    <button id="reset-btn" style="padding: 15px 30px; background: rgba(239, 68, 68, 0.2);
+                                  border: 1px solid #dc2626; border-radius: 10px; 
+                                  color: #fca5a5; font-size: 16px;
+                                  font-weight: 600; cursor: pointer; flex: 1;">
+      🔄 Reset All
+    </button>
+  </div>
+  
+  <div style="margin-top: 30px; padding: 20px; background: rgba(0, 0, 0, 0.3);
+              border-radius: 10px; border-left: 4px solid #667eea;">
+    <h3 style="color: #cbd5e1; margin-top: 0;">📊 Live Parameters</h3>
+    <div id="live-params" style="font-family: 'Monaco', monospace; font-size: 14px;
+                                 color: #86efac; background: rgba(0, 0, 0, 0.5);
+                                 padding: 15px; border-radius: 6px; overflow: auto;">
+      // Parameters will update in real-time
+    </div>
+  </div>
+</div>
+hsx end
+
+hsx define component CanvasContainer
+<div style="position: relative; width: 100%; height: 70vh; margin: 30px 0;">
+  <canvas id="main-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                                 border-radius: 20px; background: #0a0a15;"></canvas>
+  
+  <!-- Overlay controls -->
+  <div style="position: absolute; bottom: 20px; right: 20px; display: flex; gap: 10px;">
+    <button id="screenshot" style="padding: 10px 20px; background: rgba(15, 23, 42, 0.8);
+                                   backdrop-filter: blur(5px); border: 1px solid #475569;
+                                   border-radius: 8px; color: #e2e8f0; cursor: pointer;">
+      📸 Capture
+    </button>
+    <button id="fullscreen" style="padding: 10px 20px; background: rgba(15, 23, 42, 0.8);
+                                   backdrop-filter: blur(5px); border: 1px solid #475569;
+                                   border-radius: 8px; color: #e2e8f0; cursor: pointer;">
+      ⛶ Fullscreen
+    </button>
+  </div>
+</div>
+hsx end
+
+hsx define component EffectsGallery
+<div style="margin: 40px 0;">
+  <h2 style="color: #e2e8f0; font-size: 2em; margin-bottom: 30px;">
+    🎨 Available Effects
+  </h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+              gap: 25px;">
+    
+    <div class="effect-card" data-effect="particle">
+      <div style="height: 180px; background: linear-gradient(135deg, #667eea20, #764ba220);
+                  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+                  margin-bottom: 15px;">
+        <div style="font-size: 3em;">✨</div>
+      </div>
+      <h3 style="color: #e2e8f0; margin: 0 0 10px 0;">Particle Wave</h3>
+      <p style="color: #94a3b8; font-size: 0.9em; margin: 0;">
+        Dynamic particle system with wave patterns
+      </p>
+    </div>
+    
+    <div class="effect-card" data-effect="neon">
+      <div style="height: 180px; background: linear-gradient(135deg, #00d2ff20, #3a7bd520);
+                  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+                  margin-bottom: 15px;">
+        <div style="font-size: 3em;">💡</div>
+      </div>
+      <h3 style="color: #e2e8f0; margin: 0 0 10px 0;">Neon Grid</h3>
+      <p style="color: #94a3b8; font-size: 0.9em; margin: 0;">
+        Glowing grid with neon trail effects
+      </p>
+    </div>
+    
+    <div class="effect-card" data-effect="fluid">
+      <div style="height: 180px; background: linear-gradient(135deg, #43e97b20, #38f9d720);
+                  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+                  margin-bottom: 15px;">
+        <div style="font-size: 3em;">🌊</div>
+      </div>
+      <h3 style="color: #e2e8f0; margin: 0 0 10px 0;">Fluid Simulation</h3>
+      <p style="color: #94a3b8; font-size: 0.9em; margin: 0;">
+        Real-time fluid dynamics visualization
+      </p>
+    </div>
+    
+    <div class="effect-card" data-effect="hologram">
+      <div style="height: 180px; background: linear-gradient(135deg, #8e2de220, #4a00e020);
+                  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+                  margin-bottom: 15px;">
+        <div style="font-size: 3em;">👁️</div>
+      </div>
+      <h3 style="color: #e2e8f0; margin: 0 0 10px 0;">Hologram Matrix</h3>
+      <p style="color: #94a3b8; font-size: 0.9em; margin: 0;">
+        Digital rain with holographic data streams
+      </p>
+    </div>
+    
+  </div>
+</div>
+hsx end
+
+// Enable advanced HSX features
+(hsx) allow data and export
+(hsx) allow emotions
+(hsx) allow meta data set
+
+// HSX Engine commands
+:Hsx:
+$AnimationConfig
+intensity = "50"
+speed = "5"
+particles = "150"
+effect = "particle"
+color = "#667eea"
+
+// Create custom storage for animation presets
+:Hsx:
+create storage AnimationPresets
+preset1 = "wave,blue,80,7,200"
+preset2 = "neon,cyan,60,4,120"
+preset3 = "fluid,green,40,3,80"
+preset4 = "hologram,purple,90,8,300"
+
+// Enable FX effects
+:hsx: fx attach fx
+
+// Add game pixels for extra visual effect
+:hsx: game pixel red blue orange
+
+// Create new functions for animation
+:hsx: create new block mode call it "AnimationMode" :)
+
+// Render components
+hsx render Header
+hsx render ControlPanel
+hsx render CanvasContainer
+hsx render EffectsGallery
+
+// Initialize animation engine
+{js
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize canvas
+  const canvas = document.getElementById('main-canvas');
+  const ctx = canvas.getContext('2d');
+  
+  // Set canvas dimensions
+  function resizeCanvas() {
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  
+  // Animation state
+  let animationId = null;
+  let particles = [];
+  let time = 0;
+  
+  // Initialize particles
+  function initParticles(count) {
+    particles = [];
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 3 + 1,
+        speedX: Math.random() * 2 - 1,
+        speedY: Math.random() * 2 - 1,
+        color: document.getElementById('primary-color').value,
+        life: 1
+      });
+    }
+  }
+  
+  // Wave effect
+  function drawWaveEffect() {
+    const intensity = document.getElementById('intensity').value / 100;
+    const speed = document.getElementById('speed').value;
+    const color = document.getElementById('primary-color').value;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw wave pattern
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    
+    for (let x = 0; x < canvas.width; x += 10) {
+      const y = canvas.height / 2 + 
+                Math.sin((x * 0.01) + (time * speed * 0.01)) * 100 * intensity +
+                Math.cos((x * 0.005) + (time * speed * 0.005)) * 50 * intensity;
+      
+      if (x === 0) {
+        ctx.moveTo(x, y);
+      } else {
+        ctx.lineTo(x, y);
+      }
+    }
+    
+    ctx.stroke();
+    
+    // Draw particles along wave
+    particles.forEach(p => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+      p.life -= 0.001;
+      
+      if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height || p.life <= 0) {
+        p.x = Math.random() * canvas.width;
+        p.y = Math.random() * canvas.height;
+        p.life = 1;
+      }
+      
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = color + Math.floor(p.life * 100).toString(16).padStart(2, '0');
+      ctx.fill();
+    });
+    
+    time++;
+  }
+  
+  // Neon grid effect
+  function drawNeonGrid() {
+    const intensity = document.getElementById('intensity').value / 50;
+    const speed = document.getElementById('speed').value;
+    const color = document.getElementById('primary-color').value;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid
+    const gridSize = 40;
+    const offset = time * speed * 0.5;
+    
+    for (let x = 0; x < canvas.width; x += gridSize) {
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        const distance = Math.sqrt(
+          Math.pow(x - canvas.width/2, 2) + 
+          Math.pow(y - canvas.height/2, 2)
+        );
+        
+        const pulse = Math.sin(distance * 0.01 - offset) * 0.5 + 0.5;
+        const alpha = pulse * intensity;
+        
+        ctx.beginPath();
+        ctx.arc(x + offset % gridSize, y + offset % gridSize, 2 + pulse * 3, 0, Math.PI * 2);
+        ctx.fillStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+        ctx.fill();
+        
+        // Draw connections
+        if (x + gridSize < canvas.width) {
+          ctx.beginPath();
+          ctx.moveTo(x + offset % gridSize, y + offset % gridSize);
+          ctx.lineTo(x + gridSize + offset % gridSize, y + offset % gridSize);
+          ctx.strokeStyle = color.replace(')', `, ${alpha * 0.5})`).replace('rgb', 'rgba');
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+    
+    time++;
+  }
+  
+  // Effect mapping
+  const effects = {
+    particle: drawWaveEffect,
+    neon: drawNeonGrid,
+    fluid: drawWaveEffect, // Placeholder - you can expand this
+    hologram: drawWaveEffect, // Placeholder
+    galaxy: drawWaveEffect, // Placeholder
+    circuit: drawWaveEffect // Placeholder
+  };
+  
+  // Animation loop
+  function animate() {
+    const effectType = document.getElementById('effect-type').value;
+    const effectFunction = effects[effectType] || drawWaveEffect;
+    effectFunction();
+    animationId = requestAnimationFrame(animate);
+    
+    // Update live parameters
+    updateLiveParams();
+  }
+  
+  // Update live parameters display
+  function updateLiveParams() {
+    const params = {
+      effect: document.getElementById('effect-type').value,
+      color: document.getElementById('primary-color').value,
+      intensity: document.getElementById('intensity').value + '%',
+      speed: document.getElementById('speed').value,
+      particles: document.getElementById('particle-count').value,
+      fps: Math.round(1000 / (performance.now() - (window.lastTime || performance.now()))) || 60
+    };
+    window.lastTime = performance.now();
+    
+    const paramsDisplay = Object.entries(params)
+      .map(([key, value]) => `<div>${key}: <span style="color: #60a5fa;">${value}</span></div>`)
+      .join('');
+    
+    document.getElementById('live-params').innerHTML = paramsDisplay;
+  }
+  
+  // Control event listeners
+  document.getElementById('play-btn').addEventListener('click', () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+      document.getElementById('play-btn').innerHTML = '▶️ Start Animation';
+    } else {
+      const count = parseInt(document.getElementById('particle-count').value);
+      initParticles(count);
+      animationId = requestAnimationFrame(animate);
+      document.getElementById('play-btn').innerHTML = '⏸️ Pause';
+    }
+  });
+  
+  document.getElementById('random-btn').addEventListener('click', () => {
+    const effects = ['particle', 'neon', 'fluid', 'hologram', 'galaxy', 'circuit'];
+    const colors = ['#667eea', '#00d2ff', '#43e97b', '#8e2de2', '#f093fb', '#ff6b6b'];
+    
+    document.getElementById('effect-type').value = effects[Math.floor(Math.random() * effects.length)];
+    document.getElementById('primary-color').value = colors[Math.floor(Math.random() * colors.length)];
+    document.getElementById('intensity').value = Math.floor(Math.random() * 100) + 1;
+    document.getElementById('speed').value = Math.floor(Math.random() * 10) + 1;
+    document.getElementById('particle-count').value = Math.floor(Math.random() * 490) + 10;
+    
+    // Update displayed values
+    document.getElementById('intensity-value').textContent = document.getElementById('intensity').value;
+    document.getElementById('speed-value').textContent = document.getElementById('speed').value;
+    
+    if (animationId) {
+      const count = parseInt(document.getElementById('particle-count').value);
+      initParticles(count);
+    }
+  });
+  
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    document.getElementById('effect-type').value = 'particle';
+    document.getElementById('primary-color').value = '#667eea';
+    document.getElementById('intensity').value = 50;
+    document.getElementById('speed').value = 5;
+    document.getElementById('particle-count').value = 150;
+    document.getElementById('depth').value = 30;
+    
+    document.getElementById('intensity-value').textContent = '50';
+    document.getElementById('speed-value').textContent = '5';
+    
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+      document.getElementById('play-btn').innerHTML = '▶️ Start Animation';
+    }
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    initParticles(150);
+  });
+  
+  // Effect card selection
+  document.querySelectorAll('.effect-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const effect = card.dataset.effect;
+      document.getElementById('effect-type').value = effect;
+      document.querySelectorAll('.effect-card').forEach(c => 
+        c.style.boxShadow = 'none'
+      );
+      card.style.boxShadow = '0 0 0 2px #667eea, 0 0 20px rgba(102, 126, 234, 0.5)';
+    });
+  });
+  
+  // Update displayed values
+  document.getElementById('intensity').addEventListener('input', (e) => {
+    document.getElementById('intensity-value').textContent = e.target.value;
+  });
+  
+  document.getElementById('speed').addEventListener('input', (e) => {
+    document.getElementById('speed-value').textContent = e.target.value;
+  });
+  
+  // Screenshot functionality
+  document.getElementById('screenshot').addEventListener('click', () => {
+    const link = document.createElement('a');
+    link.download = 'hsx-animation-' + Date.now() + '.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+  
+  // Fullscreen functionality
+  document.getElementById('fullscreen').addEventListener('click', () => {
+    if (canvas.requestFullscreen) {
+      canvas.requestFullscreen();
+    } else if (canvas.webkitRequestFullscreen) {
+      canvas.webkitRequestFullscreen();
+    }
+  });
+  
+  // Initialize
+  initParticles(150);
+  updateLiveParams();
+  
+  // Add some CSS for interactivity
+  const style = document.createElement('style');
+  style.textContent = `
+    body {
+      margin: 0;
+      padding: 40px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #e2e8f0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .control-group {
+      background: rgba(30, 41, 59, 0.4);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      transition: all 0.3s ease;
+    }
+    
+    .control-group:hover {
+      border-color: #667eea;
+      transform: translateY(-2px);
+    }
+    
+    .effect-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      border-radius: 16px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .effect-card:hover {
+      transform: translateY(-5px);
+      border-color: #667eea;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+    }
+    
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 20px;
+      width: 20px;
+      background: #667eea;
+      border-radius: 50%;
+    }
+    
+    button {
+      transition: all 0.3s ease;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    #control-panel, .effect-card, #main-canvas {
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    #main-canvas {
+      animation-delay: 0.2s;
+    }
+    
+    .effect-card:nth-child(2) { animation-delay: 0.1s; }
+    .effect-card:nth-child(3) { animation-delay: 0.2s; }
+    .effect-card:nth-child(4) { animation-delay: 0.3s; }
+  `;
+  document.head.appendChild(style);
+  
+  console.log('🎨 HSX Animation Lab initialized!');
+});
+}
+
+// Load additional features
+(hsx) create new file "particle-system.hsx"
+(hsx) create new file "shader-effects.hsx"
+
+// Enable emotions for interactive feedback
+(hsx) make new meta data tag: animationState
+(hsx) make new meta data tag: userPreferences
+
+// Fun mode for additional effects
+(funny) extraEffects:
+  {js
+  // Add floating particles in background
+  const bgCanvas = document.createElement('canvas');
+  bgCanvas.style.position = 'fixed';
+  bgCanvas.style.top = '0';
+  bgCanvas.style.left = '0';
+  bgCanvas.style.width = '100%';
+  bgCanvas.style.height = '100%';
+  bgCanvas.style.zIndex = '-1';
+  bgCanvas.style.opacity = '0.3';
+  document.body.appendChild(bgCanvas);
+  
+  const bgCtx = bgCanvas.getContext('2d');
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+  
+  const bgParticles = [];
+  for (let i = 0; i < 50; i++) {
+    bgParticles.push({
+      x: Math.random() * bgCanvas.width,
+      y: Math.random() * bgCanvas.height,
+      size: Math.random() * 2 + 0.5,
+      speed: Math.random() * 0.5 + 0.1
+    });
+  }
+  
+  function animateBackground() {
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+    bgParticles.forEach(p => {
+      p.y += p.speed;
+      if (p.y > bgCanvas.height) {
+        p.y = 0;
+        p.x = Math.random() * bgCanvas.width;
+      }
+      bgCtx.beginPath();
+      bgCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      bgCtx.fillStyle = '#667eea30';
+      bgCtx.fill();
+    });
+    requestAnimationFrame(animateBackground);
+  }
+  animateBackground();
+  
+  window.addEventListener('resize', () => {
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+  });
+  }
+(funny)
+
+// Python block for analytics
+{py
+import js
+import math
+
+class AnimationAnalytics:
+    def __init__(self):
+        self.frames = 0
+        self.start_time = js.Date.now()
+    
+    def calculate_fps(self, current_time):
+        elapsed = (current_time - self.start_time) / 1000
+        if elapsed > 0:
+            fps = self.frames / elapsed
+            return fps
+        return 0
+    
+    def record_frame(self):
+        self.frames += 1
+
+analytics = AnimationAnalytics()
+print("📊 Animation analytics initialized")
+}
+
+// Attach some media for ambiance
+hsx attach audio "https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3"
+hsx attach image "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=200&fit=crop"
+
+// Final setup
+{js
+console.log('🚀 HSX Advanced Animation Site Ready!');
+console.log('✨ Features available:');
+console.log('   • Customizable animations');
+console.log('   • Real-time parameter controls');
+console.log('   • Multiple visual effects');
+console.log('   • Screenshot capture');
+console.log('   • Fullscreen mode');
+console.log('   • Live performance metrics');
+}
