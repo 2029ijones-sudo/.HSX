@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "selector.html",
+      "use": "@vercel/static"
+    },
+    {
       "src": "docs/**/*",
       "use": "@vercel/static"
     },
@@ -11,14 +15,20 @@
     }
   ],
   "rewrites": [
-   
+    
     {
       "source": "/",
+      "destination": "/selector.html"
+    },
+    
+    
+    {
+      "source": "/animation",
       "destination": "/docs/index.html"
     },
     {
-      "source": "/(.*)",
-      "destination": "/docs/$1"
+      "source": "/animation/:path*",
+      "destination": "/docs/:path*"
     },
     
     
@@ -33,9 +43,14 @@
   ],
   "redirects": [
     {
-      "source": "/hsx-site-example",
-      "destination": "/example",
-      "permanent": false
+      "source": "/docs",
+      "destination": "/animation",
+      "permanent": true
+    },
+    {
+      "source": "/HSX_SITE_EXAMPLE",
+      "destination": "/example", 
+      "permanent": true
     }
   ]
 }
