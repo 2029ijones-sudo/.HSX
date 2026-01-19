@@ -4,6 +4,10 @@
 
 ---
 
+![GitHub Checks](https://img.shields.io/github/checks-status/sussybocca/.HSX/main)
+
+---
+
 ## 🧩 Overview
 
 **HSX** is a lightweight, flexible scripting language powered by a JavaScript runtime engine (`hsx-runtime.js`).  
@@ -17,14 +21,14 @@ HSX combines:
 - JavaScript execution
 - Python via Pyodide
 - Modules, workflows, data, metadata, emotions, and media  
+
 into a **single unified scripting experience**.
 
 With HSX, you can:
-
-- Create `.hsx` programs that control entire applications.
-- Combine JavaScript, Python, UI, and logic in one file.
-- Build systems without strict syntax rules or heavy debugging overhead.
-- Run HSX anywhere a browser or JS engine exists.
+- Create `.hsx` programs that control entire applications
+- Combine JavaScript, Python, UI, and logic in one file
+- Build systems without strict syntax rules or heavy debugging overhead
+- Run HSX anywhere a browser or JS engine exists
 
 ---
 
@@ -90,8 +94,9 @@ This makes HSX especially useful for beginners, rapid builders, and people who s
 
 ## 📦 Installation
 
-1. Download the latest `.vsix` package from the  
-   [HSX Releases](https://github.com/sussybocca/.HSX/releases)
+1. Download the latest `.vsix` package from  
+   **HSX Releases**  
+   https://github.com/sussybocca/.HSX/releases
 2. In VS Code:
    - Open **Extensions**
    - Click **...** (top-right)
@@ -104,7 +109,6 @@ This makes HSX especially useful for beginners, rapid builders, and people who s
 ## 🧪 Usage
 
 ### Create a New HSX File
-
 - Press `Ctrl+Shift+P` / `Cmd+Shift+P`
 - Run **Create New HSX File**
 - Start writing your HSX program
@@ -121,9 +125,10 @@ No build tools.
 No compilation.
 Just load and run.
 
-⸻
-
-🗂 Recommended Project Structureproject/
+🗂 Recommended Project Structure
+text
+Copy code
+project/
 ├─ index.html
 ├─ engine/
 │  └─ hsx-runtime.js
@@ -135,14 +140,18 @@ Just load and run.
    └─ workflows/
       └─ publish.yml
 🧠 Philosophy
-
 HSX proves that you don’t need to publish a new programming language to change how people code.
 All you need is a powerful runtime and a better way of thinking about software.
 
 HSX makes coding:
-	•	Faster
-	•	Easier
-	•	Less stressful
-	•	More creative
+
+Faster
+
+Easier
+
+Less stressful
+
+More creative
+
 © 2026 HSX Project
 All rights reserved.
