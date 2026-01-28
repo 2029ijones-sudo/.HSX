@@ -1,16 +1,17 @@
-// worker.js - Deployed from same repo as hsx-runtime.js
+// worker.js - Updated with YOUR GitHub URL
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     
-    // 1. Serve the runtime file directly from repo
+    // 1. Serve the runtime file directly from YOUR GitHub repo
     if (url.pathname === '/hsx-runtime.js') {
-      // Read from the actual file in the repo
-      const runtimeContent = await readFileFromRepo('./frontend/hsx-runtime.js');
+      // Always fetch fresh from GitHub
+      const runtimeContent = await fetchRuntimeFromGitHub();
       return new Response(runtimeContent, {
         headers: {
           'Content-Type': 'application/javascript',
-          'Cache-Control': 'public, max-age=300'
+          'Cache-Control': 'public, max-age=60', // 1 minute cache
+          'X-HSX-Source': 'https://raw.githubusercontent.com/2029ijones-sudo/.HSX/main/frontend/hsx-runtime.js'
         }
       });
     }
@@ -27,10 +28,14 @@ export default {
     
     // 4. Get version
     if (url.pathname === '/api/version') {
+      const runtimeContent = await fetchRuntimeFromGitHub();
+      const versionMatch = runtimeContent.match(/HSX v([\d.]+)/) || runtimeContent.match(/v([\d.]+) FULL/);
+      
       return new Response(JSON.stringify({
-        version: '0.72+',
+        version: versionMatch ? versionMatch[1] : '0.72+',
+        source: 'https://raw.githubusercontent.com/2029ijones-sudo/.HSX/main/frontend/hsx-runtime.js',
         updated: new Date().toISOString(),
-        endpoints: ['/hsx-runtime.js', '/api/execute', '/api/load', '/api/version']
+        endpoints: ['/hsx-runtime.js', '/api/execute', '/api/load', '/api/version', '/health']
       }), {
         headers: { 'Content-Type': 'application/json' }
       });
@@ -41,47 +46,71 @@ export default {
       return new Response('OK', { status: 200 });
     }
     
-    // Default: Show usage
+    // Default: Show usage with YOUR URL
+    const workerUrl = new URL(request.url);
     return new Response(`
 HSX Runtime API Worker
 =====================
-Usage:
-1. Include in HTML: <script src="https://your-worker.workers.dev/hsx-runtime.js"></script>
-2. Execute code: POST /api/execute with JSON { "code": "hsx ..." }
-3. Load files: POST /api/load with JSON { "url": "..." }
+Runtime Source: https://raw.githubusercontent.com/2029ijones-sudo/.HSX/main/frontend/hsx-runtime.js
+Worker URL: ${workerUrl.origin}
 
-The runtime auto-updates when you push to repo.
+USAGE:
+1. In HTML:
+<script src="${workerUrl.origin}/hsx-runtime.js"></script>
+<script>
+  const hsx = new HSXRuntime();
+  hsx.execute('hsx define component Hello\\n<h1>HSX via API</h1>\\nhsx end');
+</script>
+
+2. Execute code via API:
+curl -X POST ${workerUrl.origin}/api/execute \\
+  -H "Content-Type: application/json" \\
+  -d '{"code": "hsx define component Test\\\\nHello API\\\\nhsx end"}'
+
+3. Load HSX file via API:
+curl -X POST ${workerUrl.origin}/api/load \\
+  -H "Content-Type: application/json" \\
+  -d '{"url": "https://example.com/file.hsx"}'
+
+Auto-updates when GitHub file changes.
     `.trim(), {
       headers: { 'Content-Type': 'text/plain' }
     });
   }
 };
 
-// Helper to read file from the same repo (Cloudflare Workers specific)
-async function readFileFromRepo(filePath) {
-  // In Cloudflare Workers, files in the same deployment are accessible
-  // You need to configure wrangler.toml to include the frontend folder
-  
-  // Method 1: Using import if configured as module
-  // return (await import(filePath)).default;
-  
-  // Method 2: Using KV if you stored it there
-  // return await env.HSX_RUNTIME.get('content');
-  
-  // Method 3: Using R2 if you stored it there
-  // const object = await env.HSX_BUCKET.get(filePath);
-  // return await object.text();
-  
-  // Method 4: Direct fetch from repo (if public)
-  const repoUrl = `https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/${filePath}`;
-  const response = await fetch(repoUrl);
-  return await response.text();
+// Fetch runtime directly from YOUR GitHub
+async function fetchRuntimeFromGitHub() {
+  try {
+    const response = await fetch(
+      'https://raw.githubusercontent.com/2029ijones-sudo/.HSX/main/frontend/hsx-runtime.js',
+      {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`GitHub fetch failed: ${response.status}`);
+    }
+    
+    return await response.text();
+  } catch (error) {
+    console.error('Failed to fetch from GitHub:', error);
+    // Fallback to embedded version
+    return getFallbackRuntime();
+  }
 }
 
 // Handle execution
 async function handleExecute(request) {
   if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
   
   try {
@@ -94,17 +123,19 @@ async function handleExecute(request) {
       });
     }
     
-    // Load runtime
-    const runtimeCode = await readFileFromRepo('./frontend/hsx-runtime.js');
+    // Load runtime from YOUR GitHub
+    const runtimeCode = await fetchRuntimeFromGitHub();
     
-    // Execute in isolated context
+    // Execute in worker context
     const result = await executeHSXInWorker(runtimeCode, code);
     
     return new Response(JSON.stringify({
       success: true,
       output: result.output,
-      components: result.components,
-      data: result.data
+      components: Object.keys(result.components || {}),
+      data: result.data,
+      runtime: result.runtimeVersion,
+      timestamp: new Date().toISOString()
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -123,7 +154,10 @@ async function handleExecute(request) {
 // Handle loading external HSX files
 async function handleLoad(request) {
   if (request.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
   
   try {
@@ -140,8 +174,8 @@ async function handleLoad(request) {
     const response = await fetch(url);
     const hsxCode = await response.text();
     
-    // Load runtime
-    const runtimeCode = await readFileFromRepo('./frontend/hsx-runtime.js');
+    // Load runtime from YOUR GitHub
+    const runtimeCode = await fetchRuntimeFromGitHub();
     
     // Execute the loaded code
     const result = await executeHSXInWorker(runtimeCode, hsxCode);
@@ -149,9 +183,10 @@ async function handleLoad(request) {
     return new Response(JSON.stringify({
       success: true,
       loaded: true,
-      url: url,
-      components: result.components,
-      data: result.data
+      sourceUrl: url,
+      components: Object.keys(result.components || {}),
+      data: result.data,
+      runtime: result.runtimeVersion
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
@@ -169,67 +204,122 @@ async function handleLoad(request) {
 
 // Execute HSX in worker context
 async function executeHSXInWorker(runtimeCode, hsxCode) {
-  // Create a simple sandbox
-  const sandbox = {
-    console: {
-      log: (...args) => console.log('[HSX]', ...args),
-      error: (...args) => console.error('[HSX]', ...args)
-    },
-    document: {
-      body: {
-        appendChild: () => {},
-        innerHTML: '',
-        style: {}
-      },
-      createElement: (tag) => ({
-        style: {},
-        src: '',
-        controls: false
-      })
-    },
-    fetch: fetch,
-    Date: Date,
-    JSON: JSON
-  };
-  
-  // Wrap the runtime code to work in worker
-  const wrappedRuntime = runtimeCode
-    .replace('window.HSXRuntime=HSXRuntime;', 'globalThis.HSXRuntime = HSXRuntime;')
-    .replace('window.addEventListener("DOMContentLoaded"', '// DOM event removed')
-    .replace(/document\./g, 'globalThis.document.')
-    .replace(/window\./g, 'globalThis.');
-  
-  // Execute the runtime
-  const executeCode = `
-${wrappedRuntime}
-
-// Create instance and execute
-const hsx = new HSXRuntime();
-hsx.execute(\`${hsxCode.replace(/`/g, '\\`').replace(/\\/g, '\\\\')}\`);
-
-// Return results
-return {
-  components: hsx.components,
-  data: hsx.data,
-  context: hsx.context
-};
-`;
+  // Extract version
+  const versionMatch = runtimeCode.match(/HSX v([\d.]+)/) || runtimeCode.match(/v([\d.]+) FULL/);
+  const runtimeVersion = versionMatch ? versionMatch[1] : '0.72+';
   
   try {
-    // Use Function constructor for isolation
-    const func = new Function(...Object.keys(sandbox), executeCode);
+    // Create a sandbox environment
+    const sandbox = {
+      console: {
+        log: (...args) => ({ type: 'log', args }),
+        error: (...args) => ({ type: 'error', args })
+      },
+      document: {
+        body: {
+          appendChild: () => ({ type: 'append' }),
+          innerHTML: '',
+          style: {}
+        },
+        createElement: (tag) => ({
+          style: {},
+          src: '',
+          controls: false,
+          width: 0,
+          height: 0,
+          innerHTML: ''
+        })
+      },
+      fetch: async (url) => {
+        return {
+          ok: true,
+          text: () => Promise.resolve('')
+        };
+      }
+    };
+    
+    // Wrap runtime to work in worker
+    const wrappedRuntime = runtimeCode
+      .replace('window.HSXRuntime=HSXRuntime;', 'globalThis.HSXRuntime = HSXRuntime;')
+      .replace(/window\.addEventListener\("DOMContentLoaded".*?}\)\);/gs, '')
+      .replace(/if\(location\.search\.includes\("hsxFiles="\)\).*?hsx\.load\(location\.pathname\);/gs, '')
+      .replace(/document\./g, 'globalThis.document.')
+      .replace(/window\./g, 'globalThis.');
+    
+    // Create the execution script
+    const script = `
+try {
+  ${wrappedRuntime}
+  
+  const hsx = new HSXRuntime();
+  const logs = [];
+  const errors = [];
+  
+  // Override console for capture
+  const originalLog = console.log;
+  const originalError = console.error;
+  console.log = (...args) => logs.push({ type: 'log', args: args.map(a => typeof a === 'string' ? a : JSON.stringify(a)) });
+  console.error = (...args) => errors.push({ type: 'error', args: args.map(a => typeof a === 'string' ? a : JSON.stringify(a)) });
+  
+  // Execute the HSX code
+  hsx.execute(\`${hsxCode.replace(/`/g, '\\`').replace(/\\/g, '\\\\').replace(/\n/g, '\\n')}\`);
+  
+  // Restore console
+  console.log = originalLog;
+  console.error = originalError;
+  
+  return {
+    success: true,
+    components: Object.keys(hsx.components),
+    data: hsx.data,
+    logs: logs,
+    errors: errors
+  };
+} catch (e) {
+  return {
+    success: false,
+    error: e.message,
+    stack: e.stack
+  };
+}
+`;
+    
+    // Execute in isolated context
+    const func = new Function(...Object.keys(sandbox), script);
     const result = func(...Object.values(sandbox));
     
     return {
-      output: 'Execution completed',
-      components: result.components || {},
-      data: result.data || {}
+      success: result.success,
+      output: result.success ? 'Execution completed' : result.error,
+      components: result.components || [],
+      data: result.data || {},
+      logs: result.logs || [],
+      errors: result.errors || [],
+      runtimeVersion: runtimeVersion
     };
+    
   } catch (error) {
     return {
-      output: `Error: ${error.message}`,
-      components: {},
-      data: {}
+      success: false,
+      output: `Worker execution error: ${error.message}`,
+      components: [],
+      data: {},
+      runtimeVersion: runtimeVersion
     };
   }
+}
+
+// Fallback runtime in case GitHub is down
+function getFallbackRuntime() {
+  return `// HSX Runtime Fallback v0.72+
+console.log('HSX Runtime loaded (fallback mode)');
+export class HSXRuntime {
+  constructor() {
+    console.log('HSX Runtime initialized - using fallback version');
+  }
+  async execute(code) {
+    console.log('HSX code executed (fallback):', code.substring(0, 50) + '...');
+    return { success: true };
+  }
+}`;
 }
